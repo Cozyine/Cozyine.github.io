@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ease: cubic-bezier(.22,1,.36,1);
+      --accent: #5865f2;
+      --accent-glow: rgba(88,101,242,.3);
+      --pink: #eb459e;
+      --green: #3ba55d;
+      --r: 22px;
+      --rsm: 12px;
+    }
+
+    [data-theme="dark"] {
+      --bg:      #0b0c0f;
+      --card:    #1e1f25;
+      --card2:   #25262d;
+      --border:  rgba(255,255,255,.07);
+      --border2: rgba(255,255,255,.13);
+      --text:    #f0f0f6;
+      --text2:   #9fa2b3;
+      --text3:   #50536a;
+      --shadow:  0 28px 80px rgba(0,0,0,.75);
+    }
+
+    [data-theme="light"] {
+      --bg:      #eef0f8;
+      --card:    #ffffff;
+      --card2:   #f2f3fa;
+      --border:  rgba(0,0,0,.07);
+      --border2: rgba(0,0,0,.14);
+      --text:    #14151b;
+      --text2:   #585b72;
+      --text3:   #9a9db2;
+      --shadow:  0 28px 80px rgba(70,80,180,.13);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 16px 90px;
+      transition: background .4s var(--ease), color .4s var(--ease);
+      overflow-x: hidden;
+    }
+
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .o1 {
+      width: 700px;
+      height: 700px;
+      top: -280px;
+      left: -220px;
+      background: radial-gradient(circle, rgba(88,101,242,.14) 0%, transparent 65%);
+      animation: oa 18s ease-in-out infinite;
+    }
+
+    .o2 {
+      width: 520px;
+      height: 520px;
+      bottom: -160px;
+      right: -160px;
+      background: radial-gradient(circle, rgba(235,69,158,.09) 0%, transparent 65%);
+      animation: ob 22s ease-in-out infinite;
+    }
+
+    [data-theme="light"] .o1 { opacity: .35; }
+    [data-theme="light"] .o2 { opacity: .28; }
+
+    @keyframes oa {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(70px,50px); }
+    }
+
+    @keyframes ob {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(-55px,-70px); }
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 460px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      animation: rise .75s var(--ease) both;
+      transition: background .4s var(--ease), border-color .4s var(--ease), box-shadow .4s var(--ease);
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(36px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .banner {
+      height: 148px;
+      background: linear-gradient(125deg, #1f2463 0%, #4752c4 45%, #b5206e 100%);
+      position: relative;
+      overflow: hidden;
+      transition: background .6s var(--ease);
+    }
+
+    .banner-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 36px 36px;
+    }
+
+    .banner-img {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0;
+      transition: opacity .6s var(--ease);
+    }
+
+    .banner-img.loaded { opacity: 1; }
+
+    .av-row {
+      padding: 0 24px;
+      margin-top: -46px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+    }
+
+    .av-ring {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      padding: 4px;
+      background: var(--card);
+      position: relative;
+      flex-shrink: 0;
+      transition: background .4s var(--ease);
+    }
+
+    .av-ring::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      z-index: -1;
+      opacity: 0;
+      transition: opacity .3s;
+    }
+
+    .av-ring:hover::before { opacity: 1; }
+
+    .av-img, .av-fallback {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .av-fallback {
+      background: linear-gradient(135deg, #5865f2, #eb459e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .av-status {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 3px solid var(--card);
+      transition: border-color .4s var(--ease);
+    }
+
+    .top-badges {
+      display: flex;
+      gap: 6px;
+      padding-bottom: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .chip {
+      font-family: 'Fira Code', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: var(--card2);
+      color: var(--text2);
+      transition: all .25s;
+      cursor: default;
+    }
+
+    .chip.hi {
+      background: rgba(88,101,242,.1);
+      border-color: rgba(88,101,242,.3);
+      color: var(--accent);
+    }
+
+    .body { padding: 16px 24px 26px; }
+
+    .body > * { animation: fi .5s var(--ease) both; }
+    .body > *:nth-child(1) { animation-delay: .06s; }
+    .body > *:nth-child(2) { animation-delay: .12s; }
+    .body > *:nth-child(3) { animation-delay: .18s; }
+    .body > *:nth-child(4) { animation-delay: .24s; }
+    .body > *:nth-child(5) { animation-delay: .30s; }
+    .body > *:nth-child(6) { animation-delay: .36s; }
+
+    @keyframes fi {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dname {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+    }
+
+    .handle {
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .handle em { color: var(--accent); font-style: normal; }
+
+    .online-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11.5px;
+      color: var(--green);
+      background: rgba(59,165,93,.1);
+      border: 1px solid rgba(59,165,93,.2);
+      border-radius: 100px;
+      padding: 2px 10px;
+      margin-top: 8px;
+    }
+
+    .odot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    .rule {
+      height: 1px;
+      background: var(--border);
+      margin: 18px 0;
+      transition: background .4s;
+    }
+
+    .lbl {
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text3);
+      margin-bottom: 8px;
+    }
+
+    .bio-text { font-size: 14.5px; line-height: 1.7; color: var(--text2); }
+    .no-bio   { font-size: 14px; color: var(--text3); font-style: italic; }
+
+    .badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .badge {
+      font-size: 12px;
+      padding: 4px 11px;
+      border-radius: 100px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      transition: all .25s;
+      cursor: default;
+    }
+
+    .badge:hover {
+      border-color: var(--accent);
+      color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .id-block {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: var(--rsm);
+      background: var(--card2);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all .25s;
+      user-select: none;
+    }
+
+    .id-block:hover { border-color: rgba(88,101,242,.3); }
+    .id-block:active { transform: scale(.98); }
+
+    .id-lbl {
+      font-size: 10.5px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: 700;
+    }
+
+    .id-val {
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 1px;
+    }
+
+    .copy-btn {
+      margin-left: auto;
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: rgba(88,101,242,.12);
+      border: 1px solid rgba(88,101,242,.2);
+      color: var(--accent);
+      font-weight: 600;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+
+    .id-block:hover .copy-btn { background: rgba(88,101,242,.22); }
+    .copy-btn.ok {
+      background: rgba(59,165,93,.12);
+      border-color: rgba(59,165,93,.25);
+      color: var(--green);
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, var(--card2) 25%, var(--border2) 50%, var(--card2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .sk-name   { height: 28px; width: 55%; margin-bottom: 8px; }
+    .sk-handle { height: 16px; width: 35%; margin-bottom: 10px; }
+    .sk-pill   { height: 22px; width: 80px; border-radius: 100px; }
+    .sk-bio    { height: 60px; width: 100%; }
+
+    .error-box {
+      padding: 14px 16px;
+      border-radius: var(--rsm);
+      background: rgba(237,66,69,.1);
+      border: 1px solid rgba(237,66,69,.25);
+      color: #ed4245;
+      font-size: 13.5px;
+      line-height: 1.6;
+    }
+
+    .toggle-wrap {
+      position: relative;
+      z-index: 10;
+      margin-top: 26px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px 6px 10px;
+      border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: var(--card);
+      color: var(--text3);
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .3s var(--ease);
+      box-shadow: 0 2px 12px rgba(0,0,0,.18);
+      outline: none;
+    }
+
+    .toggle-btn:hover {
+      color: var(--text2);
+      border-color: var(--accent);
+      box-shadow: 0 2px 18px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .t-track {
+      width: 28px;
+      height: 16px;
+      border-radius: 100px;
+      background: var(--card2);
+      border: 1px solid var(--border2);
+      position: relative;
+      transition: background .3s;
+      flex-shrink: 0;
+    }
+
+    [data-theme="light"] .t-track {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .t-thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text3);
+      transition: transform .3s var(--ease), background .3s;
+    }
+
+    [data-theme="light"] .t-thumb {
+      transform: translateX(12px);
+      background: #fff;
+    }
+
+    .t-icon { font-size: 14px; line-height: 1; }
+
+    @media (max-width: 480px) {
+      .dname { font-size: 20px; }
+      .body  { padding: 14px 18px 20px; }
+      .av-row { padding: 0 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+
+<div class="card" id="card">
+  <div class="banner" id="banner">
+    <div class="banner-grid"></div>
+    <div class="banner-img" id="bannerImg"></div>
+  </div>
+
+  <div class="av-row">
+    <div class="av-ring">
+      <div class="av-fallback" id="avatarEl">…</div>
+      <div class="av-status" title="Online"></div>
+    </div>
+    <div class="top-badges">
+      <span class="chip hi">⚡ Discord</span>
+      <span class="chip" id="chipExtra">Loading</span>
+    </div>
+  </div>
+
+  <div class="body" id="cardBody">
+    <div id="skeleton">
+      <div class="skeleton sk-name"></div>
+      <div class="skeleton sk-handle"></div>
+      <div class="skeleton sk-pill"></div>
+    </div>
+    <div class="rule" style="opacity:0" id="r1"></div>
+    <div id="bioSection" style="opacity:0">
+      <div class="lbl">About Me</div>
+      <div class="skeleton sk-bio" id="bioSkeleton"></div>
+    </div>
+    <div class="rule" style="opacity:0" id="r2"></div>
+    <div id="idSection" style="opacity:0">
+      <div class="id-block" onclick="copyId()">
+        <div>
+          <div class="id-lbl">Discord ID</div>
+          <div class="id-val" id="idVal">1331780207979401289</div>
+        </div>
+        <div class="copy-btn" id="copyLbl">Copy</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toggle-wrap">
+  <button class="toggle-btn" onclick="toggleTheme()">
+    <span class="t-icon" id="tIcon">🌙</span>
+    <div class="t-track"><div class="t-thumb"></div></div>
+    <span id="tLabel">Light mode</span>
+  </button>
+</div>
+
+<script>
+  const API_URL = "http://92.222.128.73:6466";
+
+  const root = document.documentElement;
+  let dark = localStorage.getItem("theme") !== "light";
+  applyTheme();
+
+  function toggleTheme() {
+    dark = !dark;
+    localStorage.setItem("theme", dark ? "dark" : "light");
+    applyTheme();
+  }
+
+  function applyTheme() {
+    root.setAttribute("data-theme", dark ? "dark" : "light");
+    document.getElementById("tIcon").textContent  = dark ? "🌙" : "☀️";
+    document.getElementById("tLabel").textContent = dark ? "Light mode" : "Dark mode";
+  }
+
+  function copyId() {
+    const id = document.getElementById("idVal").textContent;
+    navigator.clipboard.writeText(id).then(() => {
+      const btn = document.getElementById("copyLbl");
+      btn.textContent = "Copied!";
+      btn.classList.add("ok");
+      setTimeout(() => {
+        btn.textContent = "Copy";
+        btn.classList.remove("ok");
+      }, 2000);
+    });
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API_URL}/profile`);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const p = await res.json();
+      renderProfile(p);
+    } catch (err) {
+      renderError(err.message);
+    }
+  }
+
+  function renderProfile(p) {
+    const avEl = document.getElementById("avatarEl");
+    const img = document.createElement("img");
+    img.className = "av-img";
+    img.src = p.avatarUrl;
+    img.alt = "avatar";
+    img.onerror = () => {
+      img.replaceWith(avEl);
+      avEl.textContent = (p.displayName[0] || "?").toUpperCase();
+    };
+    avEl.replaceWith(img);
+
+    if (p.bannerUrl) {
+      const bi = document.getElementById("bannerImg");
+      bi.style.backgroundImage = `url(${p.bannerUrl})`;
+      bi.classList.add("loaded");
+    } else if (p.accentColor) {
+      document.getElementById("banner").style.background =
+        `linear-gradient(125deg, ${p.accentColor}88 0%, ${p.accentColor} 55%, #b5206e 100%)`;
+    }
+
+    document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0]}` : "Member";
+
+    document.getElementById("skeleton").innerHTML = `
+      <div>
+        <div class="dname">${escHtml(p.displayName)}</div>
+        <div class="handle">@<em>${escHtml(p.username)}</em></div>
+        <div class="online-pill"><span class="odot"></span>Online</div>
+      </div>
+    `;
+
+    const bioSec = document.getElementById("bioSection");
+    bioSec.innerHTML = `
+      <div class="lbl">About Me</div>
+      ${p.bio
+        ? `<p class="bio-text">${escHtml(p.bio)}</p>`
+        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
+      ${p.badges.length
+        ? `<div class="badges" style="margin-top:12px">${p.badges.map(b => `<span class="badge">🏅 ${escHtml(b)}</span>`).join("")}</div>`
+        : ""}
+    `;
+    bioSec.style.opacity = "1";
+
+    document.getElementById("idVal").textContent = p.id;
+    document.getElementById("r1").style.opacity  = "1";
+    document.getElementById("r2").style.opacity  = "1";
+    document.getElementById("idSection").style.opacity = "1";
+  }
+
+  function renderError(msg) {
+    document.getElementById("skeleton").innerHTML = `
+      <div class="error-box">
+        ⚠️ Couldn't load profile.<br>
+        <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span>
+      </div>
+    `;
+    document.getElementById("chipExtra").textContent = "Offline";
+    document.getElementById("r2").style.opacity = "1";
+    document.getElementById("idSection").style.opacity = "1";
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>
