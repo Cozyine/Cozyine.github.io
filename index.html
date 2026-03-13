@@ -529,7 +529,7 @@
 </div>
 
 <script>
-  const PROFILE_URL = "http://92.222.128.73:6466/profile";
+  const PROFILE_URL = "https://soft-forest-a8c2.fourstep20.workers.dev/profile";
 
   const root = document.documentElement;
   let dark = localStorage.getItem("theme") !== "light";
@@ -562,10 +562,9 @@
 
   async function loadProfile() {
     try {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(PROFILE_URL)}`);
+      const res = await fetch(PROFILE_URL);
       if (!res.ok) throw new Error(`API error ${res.status}`);
-      const wrapper = await res.json();
-      const p = JSON.parse(wrapper.contents);
+      const p = await res.json();
       renderProfile(p);
     } catch (err) {
       renderError(err.message);
