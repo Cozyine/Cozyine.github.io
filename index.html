@@ -529,7 +529,8 @@
 </div>
 
 <script>
-  const API_URL = "http://92.222.128.73:6466";
+  const PROFILE_URL = "http://92.222.128.73:6466/profile";
+  const PROXY = "https://corsproxy.io/?url=";
 
   const root = document.documentElement;
   let dark = localStorage.getItem("theme") !== "light";
@@ -562,7 +563,7 @@
 
   async function loadProfile() {
     try {
-      const res = await fetch(`${API_URL}/profile`);
+      const res = await fetch(PROXY + encodeURIComponent(PROFILE_URL));
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const p = await res.json();
       renderProfile(p);
