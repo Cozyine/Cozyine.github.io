@@ -87,7 +87,7 @@
     }
     .av-ring:hover::before { opacity: 1; }
     .av-decoration {
-      position: absolute; width: 100%; height: 100%;
+      position: absolute; width: 116%; height: 116%;
       top: 50%; left: 50%; transform: translate(-50%,-50%);
       pointer-events: none; z-index: 3; image-rendering: auto;
     }
@@ -118,8 +118,9 @@
     .odot.dnd     { background: #ed4245; }
     .odot.offline { background: #747f8d; }
 
-    .top-badges { display:flex; gap:6px; padding-bottom:10px; flex-wrap:wrap; justify-content:flex-end; }
-    .badges-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; padding: 6px 24px 0; }
+    .badge-icons { display:flex; align-items:center; gap:4px; flex-wrap:wrap; margin-top:6px; }
+    .badge-icons img { width:20px; height:20px; object-fit:contain; cursor:default; transition:transform .15s; filter:drop-shadow(0 1px 3px rgba(0,0,0,.4)); }
+    .badge-icons img:hover { transform:scale(1.25); }
     .chip { font-family:'Fira Code',monospace; font-size:11px; padding:4px 10px; border-radius:100px; border:1px solid var(--border2); background:var(--card2); color:var(--text2); transition:all .25s; cursor:default; }
     .chip.hi { background:rgba(88,101,242,.1); border-color:rgba(88,101,242,.3); color:var(--accent); }
 
@@ -237,7 +238,6 @@
       <div class="av-status" title="Online"></div>
     </div>
   </div>
-  <div class="badges-row" id="topBadges"></div>
   <div class="body" id="cardBody">
     <div id="skeleton">
       <div class="skeleton sk-name"></div>
@@ -450,24 +450,19 @@
       renderEffect(effectId, effectEl);
     }
 
-    // Top-right badges area (show badge icons or status)
-    const topBadges = document.getElementById("topBadges");
-    if (topBadges) {
-      if (p.badges?.length) {
-        topBadges.innerHTML = p.badges.slice(0, 3).map(b => {
-          if (b.iconUrl) {
-            return `<span class="chip" title="${escHtml(b.label||'')}" style="padding:4px 8px;display:inline-flex;align-items:center;gap:4px"><img src="${escHtml(b.iconUrl)}" style="width:16px;height:16px;vertical-align:middle" onerror="this.style.display='none'" alt=""> ${escHtml(b.label||'')}</span>`;
-          }
-          return `<span class="chip">🏅 ${escHtml(b.label||'Badge')}</span>`;
-        }).join("");
-      } else {
-        topBadges.innerHTML = "";
-      }
-    }
+    // Top-right badges area — no longer used
+    // (badges now rendered inline next to name)
 
     // Clan tag HTML helper
     const clanHtml = p.clanTag
       ? ` <span class="clan-tag">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
+      : "";
+
+    // Inline badge icons (Discord-style: icon only, with tooltip)
+    const badgeIconsHtml = p.badges?.length
+      ? `<div class="badge-icons">${p.badges.map(b => b.iconUrl
+          ? `<img src="${escHtml(b.iconUrl)}" title="${escHtml(b.label||'')}" alt="${escHtml(b.label||'')}" onerror="this.style.display='none'">`
+          : "").filter(Boolean).join("")}</div>`
       : "";
 
     // Name / handle / status pill
@@ -476,6 +471,7 @@
         <div class="dname">${escHtml(p.displayName)}${clanHtml}</div>
         <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns?` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>`:""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status]||status)}</div>
+        ${badgeIconsHtml}
       </div>`;
 
     // Nameplate bar
