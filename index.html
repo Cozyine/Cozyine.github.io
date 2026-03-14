@@ -295,45 +295,42 @@
   }
 
   // ── Effects DB — loaded from effects_db.json ──────────────────────────────
+  // Each entry: { startup, remain, duration (ms for startup APNG) }
   let EFFECTS_DB = {};
   const effectsDbReady = fetch("effects_db.json")
     .then(r => r.json())
     .then(data => { EFFECTS_DB = data; })
     .catch(e => console.warn("Could not load effects_db.json:", e));
 
-  // ── Effect video rendering ─────────────────────────────────────────────────
-  // Looks up effect by ID in local DB.
-  // Plays startup once, then 250ms after it ends switches to remain (loops forever).
+  // ── Effect rendering — APNGs displayed as <img>, startup then remain ───────
   function renderEffect(effectId, effectEl) {
     effectEl.innerHTML = "";
 
     const effect = EFFECTS_DB[effectId];
     if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
 
-    const makeVid = (src, loop) => {
-      const v = document.createElement("video");
-      v.muted = true; v.playsInline = true; v.loop = loop;
-      v.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:100";
-      const s = document.createElement("source");
-      s.src = src; s.type = "image/png";
-      v.appendChild(s);
-      return v;
+    const makeImg = (src) => {
+      const img = document.createElement("img");
+      img.src = src;
+      img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:100";
+      return img;
     };
 
-    // Build startup video
-    const startVid = makeVid(effect.startup, false);
-    effectEl.appendChild(startVid);
-    startVid.play().catch(() => {});
+    // Show startup APNG first
+    const startImg = makeImg(effect.startup);
+    effectEl.appendChild(startImg);
 
-    // When startup ends, wait 250ms then swap to remain
-    startVid.addEventListener("ended", () => {
-      setTimeout(() => {
-        startVid.remove();
-        const remainVid = makeVid(effect.remain, true);
-        effectEl.appendChild(remainVid);
-        remainVid.play().catch(() => {});
-      }, 250);
-    });
+    // Preload remain so it's ready
+    const remainImg = makeImg(effect.remain);
+    remainImg.style.opacity = "0";
+    effectEl.appendChild(remainImg);
+
+    // APNGs don't fire 'ended' — use duration from DB, default 3s
+    const duration = effect.duration || 3000;
+    setTimeout(() => {
+      startImg.remove();
+      remainImg.style.opacity = "1";
+    }, duration + 250);
   }
 
   // ── Badge icon helper ──────────────────────────────────────────────────────
