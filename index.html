@@ -331,6 +331,31 @@
     .bio-text { font-size: 14.5px; line-height: 1.7; color: var(--text2); }
     .no-bio   { font-size: 14px; color: var(--text3); font-style: italic; }
 
+    .nameplate-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 2px;
+    }
+
+    .nameplate-img {
+      position: absolute;
+      left: -8px;
+      right: -8px;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 140%;
+      width: calc(100% + 16px);
+      object-fit: cover;
+      pointer-events: none;
+      border-radius: 6px;
+      opacity: .55;
+    }
+
+    .nameplate-text {
+      position: relative;
+      z-index: 1;
+    }
+
     .activity-card {
       display: flex;
       align-items: center;
@@ -597,6 +622,29 @@
 
     .t-icon { font-size: 14px; line-height: 1; }
 
+    .nameplate-wrap {
+      position: relative;
+      display: inline-block;
+      line-height: 1;
+    }
+
+    .nameplate-img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% + 48px);
+      height: calc(100% + 20px);
+      pointer-events: none;
+      object-fit: contain;
+      z-index: 0;
+    }
+
+    .nameplate-text {
+      position: relative;
+      z-index: 1;
+    }
+
     @media (max-width: 480px) {
       .dname { font-size: 20px; }
       .body  { padding: 14px 18px 20px; }
@@ -621,9 +669,8 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges">
-      <span class="chip hi">⚡ Discord</span>
-      <span class="chip" id="chipExtra">Loading</span>
+    <div class="top-badges" id="topBadges">
+      <span class="chip" style="opacity:.4">Loading…</span>
     </div>
   </div>
 
@@ -717,8 +764,10 @@
       img.src = p.avatarUrl;
       img.alt = "avatar";
       img.onerror = () => {
-        img.replaceWith(avEl);
-        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
+        const fb = document.createElement("div");
+        fb.className = "av-fallback";
+        fb.textContent = (p.displayName[0] || "?").toUpperCase();
+        img.replaceWith(fb);
       };
       avEl.replaceWith(img);
     }
@@ -759,11 +808,17 @@
       });
     }
 
-    document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0]}` : "Member";
+    document.getElementById("chipExtra").textContent = p.badges.length ? p.badges[0].label : "Member";
 
     document.getElementById("skeleton").innerHTML = `
       <div>
-        <div class="dname">${escHtml(p.displayName)}</div>
+        <div class="dname">
+          ${p.nameplateUrl ? `
+          <span class="nameplate-wrap">
+            <img class="nameplate-img" src="${escHtml(p.nameplateUrl)}" alt="" onerror="this.style.display='none'">
+            <span class="nameplate-text">${escHtml(p.displayName)}</span>
+          </span>` : escHtml(p.displayName)}
+        </div>
         <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
@@ -778,12 +833,9 @@
       ${p.badges && p.badges.length ? `
         <div class="badges" style="margin-top:12px">
           ${p.badges.map(b => {
-            const inner = b.iconUrl
-              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
-              : `🏅 ${escHtml(b.label)}`;
             return b.link
-              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
-              : `<span class="badge">${inner}</span>`;
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${escHtml(b.label)}</a>`
+              : `<span class="badge">${escHtml(b.label)}</span>`;
           }).join("")}
         </div>` : ""}
     `;
