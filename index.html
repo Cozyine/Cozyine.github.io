@@ -291,19 +291,20 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    .nameplate-wrap {
-      margin-top: 6px;
-      height: 28px;
-      position: relative;
-      display: inline-flex;
+    .nameplate-section {
+      width: 100%;
+      margin-bottom: 16px;
+      display: flex;
       align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border-radius: var(--rsm);
     }
 
-    .nameplate-img {
-      height: 28px;
-      width: auto;
-      max-width: 180px;
-      object-fit: contain;
+    .nameplate-section img {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
       display: block;
       image-rendering: auto;
     }
@@ -674,6 +675,7 @@
       <div class="skeleton sk-pill"></div>
     </div>
     <div class="rule" style="opacity:0" id="r1"></div>
+    <div id="nameplateSection" style="display:none"></div>
     <div id="bioSection" style="opacity:0">
       <div class="lbl">About Me</div>
       <div class="skeleton sk-bio" id="bioSkeleton"></div>
@@ -754,12 +756,15 @@
     if (avEl) {
       const img = document.createElement("img");
       img.className = "av-img";
-      img.src = p.avatarUrl;
       img.alt = "avatar";
       img.onerror = () => {
-        img.replaceWith(avEl);
-        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
+        const fallback = document.createElement("div");
+        fallback.className = "av-fallback";
+        fallback.id = "avatarEl";
+        fallback.textContent = (p.displayName[0] || "?").toUpperCase();
+        img.replaceWith(fallback);
       };
+      img.src = p.avatarUrl;
       avEl.replaceWith(img);
     }
 
@@ -804,7 +809,6 @@
     document.getElementById("skeleton").innerHTML = `
       <div>
         <div class="dname">${escHtml(p.displayName)}</div>
-        ${p.nameplateUrl ? `<div class="nameplate-wrap"><img class="nameplate-img" src="${escHtml(p.nameplateUrl)}" alt="nameplate"></div>` : ""}
         <div class="handle">
           @<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}
           ${p.clanTag ? `<span class="clan-tag">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>` : ""}
@@ -812,6 +816,15 @@
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
     `;
+
+    // Nameplate — full width above About Me
+    const npSec = document.getElementById("nameplateSection");
+    if (p.nameplateUrl) {
+      npSec.innerHTML = `<div class="nameplate-section"><img src="${escHtml(p.nameplateUrl)}" alt="nameplate"></div>`;
+      npSec.style.display = "block";
+    } else {
+      npSec.style.display = "none";
+    }
 
     const bioSec = document.getElementById("bioSection");
     bioSec.innerHTML = `
