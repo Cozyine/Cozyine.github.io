@@ -119,6 +119,7 @@
     .odot.offline { background: #747f8d; }
 
     .top-badges { display:flex; gap:6px; padding-bottom:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .badges-row { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; padding: 6px 24px 0; }
     .chip { font-family:'Fira Code',monospace; font-size:11px; padding:4px 10px; border-radius:100px; border:1px solid var(--border2); background:var(--card2); color:var(--text2); transition:all .25s; cursor:default; }
     .chip.hi { background:rgba(88,101,242,.1); border-color:rgba(88,101,242,.3); color:var(--accent); }
 
@@ -235,8 +236,8 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges" id="topBadges"></div>
   </div>
+  <div class="badges-row" id="topBadges"></div>
   <div class="body" id="cardBody">
     <div id="skeleton">
       <div class="skeleton sk-name"></div>
@@ -507,17 +508,13 @@
       npSec.innerHTML = "";
     }
 
-    // Bio + badges
+    // Bio (no badges here)
     const bioSec = document.getElementById("bioSection");
     bioSec.innerHTML = `
       <div class="lbl">About Me</div>
       ${p.bio
         ? `<p class="bio-text" style="white-space:pre-line">${escHtml(p.bio)}</p>`
-        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
-      ${p.badges?.length ? `
-        <div class="badges" style="margin-top:12px">
-          ${p.badges.map(b => badgeHtml(b)).join("")}
-        </div>` : ""}`;
+        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}`;
     bioSec.style.opacity = "1";
 
     // Activity
