@@ -291,61 +291,64 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    /* Discord-style nameplate bar */
+    /* ── Nameplate bar (Discord-style) ── */
     .nameplate-bar {
+      position: relative;
+      width: 100%;
+      height: 44px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      width: 100%;
-      height: 38px;
-      border-radius: 10px;
-      margin-bottom: 14px;
-      position: relative;
-      overflow: hidden;
-      background: #2b2d31;
+      background: #111214;
+      flex-shrink: 0;
     }
 
-    .nameplate-bar video,
-    .nameplate-bar img.np-bg {
+    /* animated webm / static png fills the whole bar */
+    .nameplate-bar > video,
+    .nameplate-bar > img.np-bg {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: 10px;
+      pointer-events: none;
     }
 
-    .nameplate-bar .np-content {
+    /* content row sits on top */
+    .np-content {
       position: relative;
       z-index: 1;
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 0 10px;
+      padding: 0 12px;
       width: 100%;
       min-width: 0;
     }
 
-    .nameplate-bar .np-avatar {
-      width: 24px;
-      height: 24px;
+    .np-avatar {
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       object-fit: cover;
       flex-shrink: 0;
-      border: 1.5px solid rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,.25);
     }
 
-    .nameplate-bar .np-name {
-      font-size: 13px;
+    .np-name {
+      font-size: 14px;
       font-weight: 700;
       color: #fff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+      text-shadow: 0 1px 6px rgba(0,0,0,.8);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      letter-spacing: -.01em;
     }
 
-    /* Clan tag */
+    /* ── Clan tag ── */
     .clan-tag {
       display: inline-flex;
       align-items: center;
@@ -854,15 +857,17 @@
       </div>
     `;
 
-    // Nameplate bar — Discord-style: animated webm background + avatar + username
+    // ── Nameplate bar ──
+    // server pushes nameplateAnimatedUrl (.webm) and nameplateUrl (.png)
     const npSec = document.getElementById("nameplateSection");
-    if (p.nameplateAnimatedUrl || p.nameplateUrl) {
-      const bgEl = p.nameplateAnimatedUrl
-        ? `<video autoplay loop muted playsinline src="${escHtml(p.nameplateAnimatedUrl)}"></video>`
-        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
+    const npAnim   = p.nameplateAnimatedUrl || null;
+    const npStatic = p.nameplateUrl || null;
+    if (npAnim || npStatic) {
       npSec.innerHTML = `
         <div class="nameplate-bar">
-          ${bgEl}
+          ${npAnim
+            ? `<video autoplay loop muted playsinline><source src="${escHtml(npAnim)}" type="video/webm"></video>`
+            : `<img class="np-bg" src="${escHtml(npStatic)}" alt="">`}
           <div class="np-content">
             <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
             <span class="np-name">${escHtml(p.displayName)}</span>
