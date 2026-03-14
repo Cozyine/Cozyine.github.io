@@ -714,12 +714,16 @@
     if (avEl) {
       const img = document.createElement("img");
       img.className = "av-img";
-      img.src = p.avatarUrl;
       img.alt = "avatar";
       img.onerror = () => {
-        img.replaceWith(avEl);
-        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
+        // Image failed — swap back to the letter fallback
+        const fallback = document.createElement("div");
+        fallback.className = "av-fallback";
+        fallback.id = "avatarEl";
+        fallback.textContent = (p.displayName[0] || "?").toUpperCase();
+        img.replaceWith(fallback);
       };
+      img.src = p.avatarUrl;
       avEl.replaceWith(img);
     }
 
@@ -759,7 +763,7 @@
       });
     }
 
-    document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0]}` : "Member";
+    document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0].label || "Badge"}` : "Member";
 
     document.getElementById("skeleton").innerHTML = `
       <div>
