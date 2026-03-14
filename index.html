@@ -291,7 +291,7 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    /* ── Nameplate bar (Discord-style) ── */
+    /* ── Nameplate bar ── */
     .nameplate-bar {
       position: relative;
       width: 100%;
@@ -302,10 +302,7 @@
       display: flex;
       align-items: center;
       background: #111214;
-      flex-shrink: 0;
     }
-
-    /* animated webm / static png fills the whole bar */
     .nameplate-bar > video,
     .nameplate-bar > img.np-bg {
       position: absolute;
@@ -313,10 +310,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
-      pointer-events: none;
     }
-
-    /* content row sits on top */
     .np-content {
       position: relative;
       z-index: 1;
@@ -327,16 +321,14 @@
       width: 100%;
       min-width: 0;
     }
-
     .np-avatar {
       width: 26px;
       height: 26px;
       border-radius: 50%;
       object-fit: cover;
       flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,.25);
+      border: 2px solid rgba(255,255,255,.3);
     }
-
     .np-name {
       font-size: 14px;
       font-weight: 700;
@@ -345,10 +337,29 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      letter-spacing: -.01em;
+    }
+    .np-tag {
+      margin-left: auto;
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px 2px 4px;
+      border-radius: 6px;
+      background: rgba(0,0,0,.35);
+      color: #fff;
+      white-space: nowrap;
+    }
+    .np-tag img {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      object-fit: cover;
     }
 
-    /* ── Clan tag ── */
+    /* ── Clan tag (next to display name) ── */
     .clan-tag {
       display: inline-flex;
       align-items: center;
@@ -364,7 +375,6 @@
       vertical-align: middle;
       margin-left: 6px;
     }
-
     .clan-tag img {
       width: 14px;
       height: 14px;
@@ -807,10 +817,11 @@
       avEl.replaceWith(img);
     }
 
+    // Profile decoration overlay on avatar
     if (p.decorationUrl) {
       const ring = document.querySelector(".av-ring");
-      const existingDec = ring.querySelector(".av-decoration");
-      if (existingDec) existingDec.remove();
+      const existing = ring.querySelector(".av-decoration");
+      if (existing) existing.remove();
       const dec = document.createElement("img");
       dec.className = "av-decoration";
       dec.src = p.decorationUrl;
@@ -857,20 +868,22 @@
       </div>
     `;
 
-    // ── Nameplate bar ──
-    // server pushes nameplateAnimatedUrl (.webm) and nameplateUrl (.png)
+    // Nameplate bar — animated webm bg + avatar + name + clan tag on the right
     const npSec = document.getElementById("nameplateSection");
-    const npAnim   = p.nameplateAnimatedUrl || null;
-    const npStatic = p.nameplateUrl || null;
-    if (npAnim || npStatic) {
+    if (p.nameplateAnimatedUrl || p.nameplateUrl) {
+      const bgEl = p.nameplateAnimatedUrl
+        ? `<video autoplay loop muted playsinline crossorigin="anonymous"><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
+        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="" crossorigin="anonymous">`;
+      const tagEl = p.clanTag
+        ? `<span class="np-tag">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
+        : "";
       npSec.innerHTML = `
         <div class="nameplate-bar">
-          ${npAnim
-            ? `<video autoplay loop muted playsinline><source src="${escHtml(npAnim)}" type="video/webm"></video>`
-            : `<img class="np-bg" src="${escHtml(npStatic)}" alt="">`}
+          ${bgEl}
           <div class="np-content">
             <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
             <span class="np-name">${escHtml(p.displayName)}</span>
+            ${tagEl}
           </div>
         </div>`;
     } else {
