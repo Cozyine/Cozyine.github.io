@@ -6,7 +6,6 @@
   <title>Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   <style>
     :root {
       --ease: cubic-bezier(.22,1,.36,1);
@@ -349,16 +348,52 @@
       document.getElementById("banner").style.background = p.accentColor;
     }
 
-    // Profile effect — proxied through worker to bypass CORS
+    // Profile effect — fetch config from worker, render using Discord's effects[] format.
+    // Each entry has a src (WebM/image URL), loop, start (ms delay), loopDelay, zIndex.
     if (p.effectUrl) {
       const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
       if (effectId) {
         const effectEl = document.getElementById("profileEffect");
         effectEl.innerHTML = "";
-        lottie.loadAnimation({
-          container: effectEl, renderer: "svg", loop: true, autoplay: true,
-          path: `${API}/proxy-effect?id=${effectId}`,
-        });
+        fetch(`${API}/proxy-effect?id=${effectId}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(cfg => {
+            if (!cfg) return;
+            const effects = cfg.effects || [];
+            effects.forEach(fx => {
+              const video = document.createElement("video");
+              video.src = fx.src;
+              video.loop = fx.loop;
+              video.muted = true;
+              video.autoplay = false;
+              video.playsInline = true;
+              video.style.cssText = `
+                position:absolute; top:0; left:0; width:100%; height:100%;
+                object-fit:cover; pointer-events:none;
+                z-index:${fx.zIndex ?? 1};
+              `;
+              // Handle start delay and loopDelay
+              const startDelay = fx.start || 0;
+              const loopDelay  = fx.loopDelay || 0;
+              function playWithDelay() {
+                setTimeout(() => {
+                  video.currentTime = 0;
+                  video.play().catch(() => {});
+                  if (!fx.loop && loopDelay > 0) {
+                    video.addEventListener("ended", function onEnd() {
+                      setTimeout(() => {
+                        video.currentTime = 0;
+                        video.play().catch(() => {});
+                      }, loopDelay);
+                    }, { once: true });
+                  }
+                }, startDelay);
+              }
+              video.addEventListener("canplaythrough", playWithDelay, { once: true });
+              effectEl.appendChild(video);
+            });
+          })
+          .catch(() => {});
       }
     }
 
