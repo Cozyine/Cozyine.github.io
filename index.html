@@ -291,120 +291,6 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    /* ── Nameplate bar ── */
-    .nameplate-bar {
-      position: relative;
-      width: 100%;
-      height: 52px;
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 14px;
-      background: #111214;
-    }
-    .nameplate-bar > video,
-    .nameplate-bar > img.np-bg {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      display: block;
-    }
-    /* dark accent overlay on left so text is always readable */
-    .np-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to right, var(--np-accent, #0008) 0%, transparent 60%);
-      z-index: 0;
-    }
-    .np-content {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      padding: 0 10px;
-      gap: 3px;
-    }
-    .np-row1 {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-    }
-    .np-avatar {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-      border: 1.5px solid rgba(255,255,255,.35);
-    }
-    .np-name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,.9);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .np-clan {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 1px 6px 1px 4px;
-      border-radius: 5px;
-      background: rgba(0,0,0,.45);
-      backdrop-filter: blur(4px);
-      color: #fff;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
-    .np-clan img { width: 13px; height: 13px; border-radius: 3px; object-fit: cover; }
-    .np-row2 {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding-left: 28px;
-      min-width: 0;
-    }
-    .np-activity {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 10px;
-      font-weight: 500;
-      color: rgba(255,255,255,.8);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-shadow: 0 1px 3px rgba(0,0,0,.9);
-    }
-    .np-activity img { width: 12px; height: 12px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }
-
-    /* ── Clan tag next to display name ── */
-    .clan-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 8px 2px 5px;
-      border-radius: 6px;
-      background: var(--card2);
-      border: 1px solid var(--border2);
-      color: var(--text2);
-      white-space: nowrap;
-      vertical-align: middle;
-      margin-left: 6px;
-    }
-    .clan-tag img { width: 14px; height: 14px; border-radius: 3px; object-fit: cover; }
-
     .online-pill {
       display: inline-flex;
       align-items: center;
@@ -748,7 +634,6 @@
       <div class="skeleton sk-pill"></div>
     </div>
     <div class="rule" style="opacity:0" id="r1"></div>
-    <div id="nameplateSection"></div>
     <div id="bioSection" style="opacity:0">
       <div class="lbl">About Me</div>
       <div class="skeleton sk-bio" id="bioSkeleton"></div>
@@ -829,108 +714,65 @@
     if (avEl) {
       const img = document.createElement("img");
       img.className = "av-img";
+      img.src = p.avatarUrl;
       img.alt = "avatar";
       img.onerror = () => {
-        const fallback = document.createElement("div");
-        fallback.className = "av-fallback";
-        fallback.textContent = (p.displayName[0] || "?").toUpperCase();
-        img.replaceWith(fallback);
+        img.replaceWith(avEl);
+        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
       };
-      img.src = p.avatarUrl;
       avEl.replaceWith(img);
     }
 
-    // Decoration — must run AFTER avatar swap so ring is still in DOM
     if (p.decorationUrl) {
       const ring = document.querySelector(".av-ring");
-      if (ring) {
-        const existingDec = ring.querySelector(".av-decoration");
-        if (existingDec) existingDec.remove();
-        const dec = document.createElement("img");
-        dec.className = "av-decoration";
-        dec.src = p.decorationUrl;
-        dec.alt = "";
-        ring.appendChild(dec);
-      }
+      const existingDec = ring.querySelector(".av-decoration");
+      if (existingDec) existingDec.remove();
+      const dec = document.createElement("img");
+      dec.className = "av-decoration";
+      dec.src = p.decorationUrl;
+      dec.alt = "";
+      ring.appendChild(dec);
     }
 
     const dot = document.querySelector(".av-status");
     dot.className = `av-status ${status}`;
     dot.title = STATUS_LABEL[status] || status;
 
-    // Banner — solid accent color only, no gradient; animated if bannerUrl exists
     if (p.bannerUrl) {
       const bi = document.getElementById("bannerImg");
       bi.style.backgroundImage = `url(${p.bannerUrl})`;
       bi.classList.add("loaded");
     } else if (p.accentColor) {
-      document.getElementById("banner").style.background = p.accentColor;
+      document.getElementById("banner").style.background =
+        `linear-gradient(125deg, ${p.accentColor}88 0%, ${p.accentColor} 55%, #b5206e 100%)`;
     }
 
     if (p.effectUrl) {
-      const effectEl = document.getElementById("profileEffect");
-      effectEl.innerHTML = "";
-      lottie.loadAnimation({
-        container:     effectEl,
-        renderer:      "svg",
-        loop:          true,
-        autoplay:      true,
-        path:          p.effectUrl,
-      });
+      // Proxy through worker to bypass CORS/403 on Discord's CDN
+      const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
+      const proxiedUrl = effectId ? `${API}/proxy-effect?id=${effectId}` : null;
+      if (proxiedUrl) {
+        const effectEl = document.getElementById("profileEffect");
+        effectEl.innerHTML = "";
+        lottie.loadAnimation({
+          container: effectEl,
+          renderer:  "svg",
+          loop:      true,
+          autoplay:  true,
+          path:      proxiedUrl,
+        });
+      }
     }
 
     document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0].label || "Badge"}` : "Member";
 
-    const clanHtml = p.clanTag
-      ? ` <span class="clan-tag">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
-      : "";
-
     document.getElementById("skeleton").innerHTML = `
       <div>
-        <div class="dname">${escHtml(p.displayName)}${clanHtml}</div>
+        <div class="dname">${escHtml(p.displayName)}</div>
         <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
     `;
-
-    // Nameplate bar — left overlay darkened to match accent, clan tag + activity below name
-    const npSec = document.getElementById("nameplateSection");
-    if (p.nameplateAnimatedUrl || p.nameplateUrl) {
-      const bgEl = p.nameplateAnimatedUrl
-        ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
-        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-
-      // darken left side with the accent color
-      const accentDark = p.accentColor ? p.accentColor + "cc" : "rgba(0,0,0,0.8)";
-      const overlayStyle = `--np-accent:${accentDark}`;
-
-      const npClanEl = p.clanTag
-        ? `<span class="np-clan">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
-        : "";
-
-      const actIcon = activity && activity.largeImage
-        ? `<img src="${escHtml(activity.largeImage)}" alt="">`
-        : "🎮";
-      const npActivityEl = activity && activity.name
-        ? `<span class="np-activity">${actIcon} ${escHtml(activity.name)}</span>`
-        : "";
-
-      npSec.innerHTML = `
-        <div class="nameplate-bar">
-          ${bgEl}
-          <div class="np-overlay" style="${overlayStyle}"></div>
-          <div class="np-content">
-            <div class="np-row1">
-              <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
-              <span class="np-name">${escHtml(p.displayName)}</span>
-              ${npClanEl}
-            </div>
-            ${npActivityEl ? `<div class="np-row2">${npActivityEl}</div>` : ""}
-          </div>
-        </div>`;
-    } else {
-      npSec.innerHTML = "";
-    }
 
     const bioSec = document.getElementById("bioSection");
     bioSec.innerHTML = `
