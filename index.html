@@ -291,51 +291,42 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    /* Nameplate — Discord-style username decoration bar */
-    .nameplate-bar {
+    /* Nameplate */
+    .nameplate-wrap {
+      width: 100%;
+      margin-bottom: 14px;
+      border-radius: var(--rsm);
+      overflow: hidden;
+      position: relative;
+      height: 40px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin: 10px 0 4px;
-      padding: 5px 10px 5px 6px;
-      border-radius: 8px;
-      background: var(--card2);
-      border: 1px solid var(--border);
-      width: fit-content;
-      max-width: 100%;
-      position: relative;
-      overflow: hidden;
     }
 
-    .nameplate-bar-bg {
+    .nameplate-wrap video,
+    .nameplate-wrap img {
       position: absolute;
       inset: 0;
-      background-size: cover;
-      background-position: center;
-      opacity: 0.18;
-      pointer-events: none;
-      border-radius: inherit;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: var(--rsm);
     }
 
-    .nameplate-bar-name {
+    .nameplate-wrap .np-label {
+      position: relative;
+      z-index: 1;
+      padding: 0 12px;
       font-size: 13px;
-      font-weight: 600;
-      color: var(--text);
-      position: relative;
-      z-index: 1;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.6);
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .nameplate-bar img.np-icon {
-      width: 20px;
-      height: 20px;
-      object-fit: contain;
-      flex-shrink: 0;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Clan tag pill */
+    /* Clan tag */
     .clan-tag {
       display: inline-flex;
       align-items: center;
@@ -349,6 +340,7 @@
       color: var(--text2);
       white-space: nowrap;
       vertical-align: middle;
+      margin-left: 6px;
     }
 
     .clan-tag img {
@@ -786,7 +778,6 @@
       img.onerror = () => {
         const fallback = document.createElement("div");
         fallback.className = "av-fallback";
-        fallback.id = "avatarEl";
         fallback.textContent = (p.displayName[0] || "?").toUpperCase();
         img.replaceWith(fallback);
       };
@@ -844,19 +835,18 @@
       </div>
     `;
 
-    // Nameplate bar — above About Me, styled like Discord's username bar
+    // Nameplate — full-width animated bar above About Me
     const npSec = document.getElementById("nameplateSection");
-    if (p.nameplateUrl) {
+    if (p.nameplateAnimatedUrl || p.nameplateUrl) {
       npSec.innerHTML = `
-        <div class="nameplate-bar">
-          <div class="nameplate-bar-bg" style="background-image:url('${escHtml(p.nameplateUrl)}')"></div>
-          <img class="np-icon" src="${escHtml(p.nameplateUrl)}" alt="nameplate">
-          <span class="nameplate-bar-name">${escHtml(p.displayName)}</span>
+        <div class="nameplate-wrap">
+          ${p.nameplateAnimatedUrl
+            ? `<video autoplay loop muted playsinline src="${escHtml(p.nameplateAnimatedUrl)}"></video>`
+            : `<img src="${escHtml(p.nameplateUrl)}" alt="nameplate">`}
+          <span class="np-label">${escHtml(p.displayName)}</span>
         </div>`;
-      npSec.style.marginBottom = "12px";
     } else {
       npSec.innerHTML = "";
-      npSec.style.marginBottom = "0";
     }
 
     const bioSec = document.getElementById("bioSection");
