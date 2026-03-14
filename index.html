@@ -236,10 +236,7 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges">
-      <span class="chip hi">⚡ Discord</span>
-      <span class="chip" id="chipExtra">Loading</span>
-    </div>
+    <div class="top-badges" id="topBadges"></div>
   </div>
   <div class="body" id="cardBody">
     <div id="skeleton">
@@ -363,9 +360,7 @@
       }
     }
 
-    // Chips
-    document.getElementById("chipExtra").textContent =
-      p.badges.length ? `🏅 ${p.badges[0].label||"Badge"}` : "Member";
+    // Top badges area — hidden now, nothing shown
 
     // Clan tag HTML
     const clanHtml = p.clanTag
@@ -502,7 +497,7 @@
     document.getElementById("skeleton").innerHTML = `
       <div class="error-box">⚠️ Couldn't load profile.<br>
       <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span></div>`;
-    document.getElementById("chipExtra").textContent = "Offline";
+
     document.getElementById("r2").style.opacity = "1";
     document.getElementById("idSection").style.opacity = "1";
   }
