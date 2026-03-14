@@ -6,6 +6,7 @@
   <title>Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   <style>
     :root {
       --ease: cubic-bezier(.22,1,.36,1);
@@ -78,7 +79,6 @@
       width: 90px; height: 90px; border-radius: 50%; padding: 4px;
       background: var(--card); position: relative; flex-shrink: 0;
       transition: background .4s var(--ease); overflow: visible;
-      isolation: isolate;
     }
     .av-ring::before {
       content:''; position:absolute; inset:-2px; border-radius:50%;
@@ -87,7 +87,7 @@
     }
     .av-ring:hover::before { opacity: 1; }
     .av-decoration {
-      position: absolute; width: 116%; height: 116%;
+      position: absolute; width: 140%; height: 140%;
       top: 50%; left: 50%; transform: translate(-50%,-50%);
       pointer-events: none; z-index: 3; image-rendering: auto;
     }
@@ -152,7 +152,7 @@
     }
     .np-overlay {
       position:absolute; inset:0; z-index:0;
-      background:linear-gradient(to right, var(--np-accent,rgba(0,0,0,.8)) 0%, transparent 55%);
+      background:linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.5) 45%, transparent 80%);
     }
     .np-content {
       position:absolute; inset:0; z-index:1; display:flex; flex-direction:column;
@@ -348,52 +348,16 @@
       document.getElementById("banner").style.background = p.accentColor;
     }
 
-    // Profile effect — fetch config from worker, render using Discord's effects[] format.
-    // Each entry has a src (WebM/image URL), loop, start (ms delay), loopDelay, zIndex.
+    // Profile effect — proxied through worker to bypass CORS
     if (p.effectUrl) {
       const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
       if (effectId) {
         const effectEl = document.getElementById("profileEffect");
         effectEl.innerHTML = "";
-        fetch(`${API}/proxy-effect?id=${effectId}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(cfg => {
-            if (!cfg) return;
-            const effects = cfg.effects || [];
-            effects.forEach(fx => {
-              const video = document.createElement("video");
-              video.src = fx.src;
-              video.loop = fx.loop;
-              video.muted = true;
-              video.autoplay = false;
-              video.playsInline = true;
-              video.style.cssText = `
-                position:absolute; top:0; left:0; width:100%; height:100%;
-                object-fit:cover; pointer-events:none;
-                z-index:${fx.zIndex ?? 1};
-              `;
-              // Handle start delay and loopDelay
-              const startDelay = fx.start || 0;
-              const loopDelay  = fx.loopDelay || 0;
-              function playWithDelay() {
-                setTimeout(() => {
-                  video.currentTime = 0;
-                  video.play().catch(() => {});
-                  if (!fx.loop && loopDelay > 0) {
-                    video.addEventListener("ended", function onEnd() {
-                      setTimeout(() => {
-                        video.currentTime = 0;
-                        video.play().catch(() => {});
-                      }, loopDelay);
-                    }, { once: true });
-                  }
-                }, startDelay);
-              }
-              video.addEventListener("canplaythrough", playWithDelay, { once: true });
-              effectEl.appendChild(video);
-            });
-          })
-          .catch(() => {});
+        lottie.loadAnimation({
+          container: effectEl, renderer: "svg", loop: true, autoplay: true,
+          path: `${API}/proxy-effect?id=${effectId}`,
+        });
       }
     }
 
@@ -420,7 +384,6 @@
       const bgEl = p.nameplateAnimatedUrl
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-      const accentDark = p.accentColor ? p.accentColor+"cc" : "rgba(0,0,0,.8)";
       const npClan = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
         : "";
@@ -430,7 +393,7 @@
       npSec.innerHTML = `
         <div class="nameplate-bar">
           ${bgEl}
-          <div class="np-overlay" style="--np-accent:${accentDark}"></div>
+          <div class="np-overlay" id="npOverlay"></div>
           <div class="np-content">
             <div class="np-row1">
               <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
@@ -440,6 +403,43 @@
             ${npAct ? `<div class="np-row2">${npAct}</div>` : ""}
           </div>
         </div>`;
+
+      // Sample dominant color from the static nameplate image via canvas,
+      // then apply a heavily darkened tint so the overlay isn't oversaturated.
+      const sampleUrl = p.nameplateUrl || p.nameplateAnimatedUrl;
+      const probe = new Image();
+      probe.crossOrigin = "anonymous";
+      probe.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = 4; canvas.height = 4;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(probe, 0, 0, 4, 4);
+          const d = ctx.getImageData(0, 0, 4, 4).data;
+          // Average the left two columns (8 pixels) to get edge color
+          let r=0, g=0, b=0, n=0;
+          for (let i=0; i<d.length; i+=4) { r+=d[i]; g+=d[i+1]; b+=d[i+2]; n++; }
+          r=Math.round(r/n); g=Math.round(g/n); b=Math.round(b/n);
+          // Darken significantly: mix 15% of sampled color with dark base
+          const dr = Math.round(r * 0.18);
+          const dg = Math.round(g * 0.18);
+          const db = Math.round(b * 0.18);
+          const overlay = document.getElementById("npOverlay");
+          if (overlay) {
+            overlay.style.background =
+              `linear-gradient(to right, rgba(${dr},${dg},${db},0.93) 0%, rgba(${dr},${dg},${db},0.65) 40%, rgba(${dr},${dg},${db},0.15) 72%, transparent 100%)`;
+          }
+        } catch(e) {
+          // CORS blocked — fall back to a plain dark overlay
+          const overlay = document.getElementById("npOverlay");
+          if (overlay) overlay.style.background = "linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.5) 45%, transparent 80%)";
+        }
+      };
+      probe.onerror = () => {
+        const overlay = document.getElementById("npOverlay");
+        if (overlay) overlay.style.background = "linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.5) 45%, transparent 80%)";
+      };
+      probe.src = sampleUrl;
     } else {
       npSec.innerHTML = "";
     }
