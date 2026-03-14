@@ -775,9 +775,17 @@
       ${p.bio
         ? `<p class="bio-text" style="white-space:pre-line">${escHtml(p.bio)}</p>`
         : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
-      ${p.badges.length
-        ? `<div class="badges" style="margin-top:12px">${p.badges.map(b => `<span class="badge">🏅 ${escHtml(b)}</span>`).join("")}</div>`
-        : ""}
+      ${p.badges && p.badges.length ? `
+        <div class="badges" style="margin-top:12px">
+          ${p.badges.map(b => {
+            const inner = b.iconUrl
+              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
+              : `🏅 ${escHtml(b.label)}`;
+            return b.link
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
+              : `<span class="badge">${inner}</span>`;
+          }).join("")}
+        </div>` : ""}
     `;
     bioSec.style.opacity = "1";
 
