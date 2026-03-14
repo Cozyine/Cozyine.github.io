@@ -154,7 +154,7 @@
     }
     .np-overlay {
       position:absolute; inset:0; z-index:0;
-      background:linear-gradient(to right, var(--np-accent,rgba(0,0,0,.8)) 0%, transparent 55%);
+      background: var(--np-accent, rgba(0,0,0,.5));
     }
     .np-content {
       position:absolute; inset:0; z-index:1; display:flex; flex-direction:column;
@@ -296,7 +296,7 @@
 
   // ── Effects DB — loaded from effects_db.json ──────────────────────────────
   let EFFECTS_DB = {};
-  fetch("effects_db.json")
+  const effectsDbReady = fetch("effects_db.json")
     .then(r => r.json())
     .then(data => { EFFECTS_DB = data; })
     .catch(e => console.warn("Could not load effects_db.json:", e));
@@ -451,7 +451,7 @@
       const bgEl = p.nameplateAnimatedUrl
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-      const accentDark = p.accentColor ? p.accentColor+"cc" : "rgba(0,0,0,.8)";
+      const accentDark = p.accentColor ? p.accentColor + "80" : "rgba(0,0,0,.5)";
       const npClan = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
         : "";
@@ -550,9 +550,11 @@
     return h>0?`${pad(h)}:${pad(m)}:${pad(s)} elapsed`:`${pad(m)}:${pad(s)} elapsed`;
   }
 
-  // Initial load + 60s auto-refresh for avatar/banner/decos/badges
-  loadProfile();
-  setInterval(loadProfile, 60_000);
+  // Initial load — wait for effects DB first, then start polling
+  effectsDbReady.then(() => {
+    loadProfile();
+    setInterval(loadProfile, 60_000);
+  });
 </script>
 </body>
 </html>
