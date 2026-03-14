@@ -176,6 +176,22 @@
 
     .av-ring:hover::before { opacity: 1; }
 
+    .av-decoration {
+      position: absolute;
+      inset: -10px;
+      width: calc(100% + 20px);
+      height: calc(100% + 20px);
+      pointer-events: none;
+      z-index: 3;
+      animation: spin-decoration 8s linear infinite;
+    }
+
+    @keyframes spin-decoration {
+      0%   { transform: rotate(0deg) scale(1); }
+      50%  { transform: rotate(180deg) scale(1.04); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
     .av-img, .av-fallback {
       width: 82px;
       height: 82px;
@@ -654,6 +670,19 @@
         avEl.textContent = (p.displayName[0] || "?").toUpperCase();
       };
       avEl.replaceWith(img);
+    }
+
+    if (p.decorationUrl) {
+      const ring = document.querySelector(".av-ring");
+      const existingDec = ring.querySelector(".av-decoration");
+      if (existingDec) existingDec.remove();
+      const dec = document.createElement("img");
+      dec.className = "av-decoration";
+      dec.src = p.decorationUrl;
+      dec.alt = "";
+      ring.appendChild(dec);
+      ring.style.background = "transparent";
+      ring.style.padding = "0";
     }
 
     const dot = document.querySelector(".av-status");
