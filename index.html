@@ -291,36 +291,55 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    /* Nameplate */
-    .nameplate-wrap {
-      width: 100%;
-      margin-bottom: 14px;
-      border-radius: var(--rsm);
-      overflow: hidden;
-      position: relative;
-      height: 40px;
+    /* Discord-style nameplate bar */
+    .nameplate-bar {
       display: flex;
       align-items: center;
+      gap: 8px;
+      width: 100%;
+      height: 38px;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+      background: #2b2d31;
     }
 
-    .nameplate-wrap video,
-    .nameplate-wrap img {
+    .nameplate-bar video,
+    .nameplate-bar img.np-bg {
       position: absolute;
       inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      border-radius: var(--rsm);
+      border-radius: 10px;
     }
 
-    .nameplate-wrap .np-label {
+    .nameplate-bar .np-content {
       position: relative;
       z-index: 1;
-      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 10px;
+      width: 100%;
+      min-width: 0;
+    }
+
+    .nameplate-bar .np-avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 1.5px solid rgba(255,255,255,0.3);
+    }
+
+    .nameplate-bar .np-name {
       font-size: 13px;
       font-weight: 700;
       color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,.6);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.7);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -835,15 +854,19 @@
       </div>
     `;
 
-    // Nameplate — full-width animated bar above About Me
+    // Nameplate bar — Discord-style: animated webm background + avatar + username
     const npSec = document.getElementById("nameplateSection");
     if (p.nameplateAnimatedUrl || p.nameplateUrl) {
+      const bgEl = p.nameplateAnimatedUrl
+        ? `<video autoplay loop muted playsinline src="${escHtml(p.nameplateAnimatedUrl)}"></video>`
+        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
       npSec.innerHTML = `
-        <div class="nameplate-wrap">
-          ${p.nameplateAnimatedUrl
-            ? `<video autoplay loop muted playsinline src="${escHtml(p.nameplateAnimatedUrl)}"></video>`
-            : `<img src="${escHtml(p.nameplateUrl)}" alt="nameplate">`}
-          <span class="np-label">${escHtml(p.displayName)}</span>
+        <div class="nameplate-bar">
+          ${bgEl}
+          <div class="np-content">
+            <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
+            <span class="np-name">${escHtml(p.displayName)}</span>
+          </div>
         </div>`;
     } else {
       npSec.innerHTML = "";
