@@ -295,14 +295,13 @@
     .nameplate-bar {
       position: relative;
       width: 100%;
-      height: 44px;
+      height: 52px;
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 14px;
-      display: flex;
-      align-items: center;
       background: #111214;
     }
+    /* video/img fills entire bar as background */
     .nameplate-bar > video,
     .nameplate-bar > img.np-bg {
       position: absolute;
@@ -310,84 +309,93 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
+      display: block;
     }
+    /* content on top of video */
     .np-content {
-      position: relative;
+      position: absolute;
+      inset: 0;
       z-index: 1;
       display: flex;
-      align-items: center;
-      gap: 7px;
+      flex-direction: column;
+      justify-content: center;
       padding: 0 10px;
-      width: 100%;
+      gap: 2px;
+    }
+    /* top row: avatar + name + clan tag */
+    .np-row1 {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       min-width: 0;
     }
     .np-avatar {
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
       object-fit: cover;
       flex-shrink: 0;
-      border: 2px solid rgba(255,255,255,.3);
+      border: 1.5px solid rgba(255,255,255,.35);
     }
     .np-name {
-      font-size: 13.5px;
+      font-size: 13px;
       font-weight: 700;
       color: #fff;
-      text-shadow: 0 1px 6px rgba(0,0,0,.8);
+      text-shadow: 0 1px 4px rgba(0,0,0,.9);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      flex: 1;
-      min-width: 0;
-    }
-    /* right side of nameplate: clan tag + activity */
-    .np-right {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      flex-shrink: 0;
-      margin-left: auto;
     }
     .np-clan {
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
-      padding: 2px 7px 2px 4px;
-      border-radius: 6px;
-      background: rgba(0,0,0,.4);
+      padding: 1px 6px 1px 4px;
+      border-radius: 5px;
+      background: rgba(0,0,0,.45);
       backdrop-filter: blur(4px);
       color: #fff;
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .np-clan img {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      object-fit: cover;
-    }
-    .np-activity {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 600;
-      color: rgba(255,255,255,.85);
-      white-space: nowrap;
-      background: rgba(0,0,0,.35);
-      backdrop-filter: blur(4px);
-      padding: 2px 7px;
-      border-radius: 6px;
-    }
-    .np-activity img {
       width: 13px;
       height: 13px;
       border-radius: 3px;
       object-fit: cover;
     }
+    /* bottom row: activity */
+    .np-row2 {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+      padding-left: 28px; /* align under name, past avatar */
+    }
+    .np-activity {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255,255,255,.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0,0,0,.9);
+    }
+    .np-activity img {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
 
-    /* ── Clan tag (next to display name) ── */
+    /* ── Clan tag next to display name ── */
     .clan-tag {
       display: inline-flex;
       align-items: center;
@@ -895,7 +903,9 @@
       </div>
     `;
 
-    // Nameplate bar — animated webm bg + avatar + name, clan tag + activity on right
+    // Nameplate bar
+    // Layout: [avatar] [name] [clan tag]   ← row 1
+    //                  [🎮 activity name]  ← row 2
     const npSec = document.getElementById("nameplateSection");
     if (p.nameplateAnimatedUrl || p.nameplateUrl) {
       const bgEl = p.nameplateAnimatedUrl
@@ -906,17 +916,23 @@
         ? `<span class="np-clan">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
         : "";
 
+      const activityIcon = activity && activity.largeImage
+        ? `<img src="${escHtml(activity.largeImage)}" alt="">`
+        : activity ? "🎮" : "";
       const npActivityEl = activity && activity.name
-        ? `<span class="np-activity">${activity.largeImage ? `<img src="${escHtml(activity.largeImage)}" alt="">` : "🎮"}${escHtml(activity.name)}</span>`
+        ? `<span class="np-activity">${activityIcon} ${escHtml(activity.name)}</span>`
         : "";
 
       npSec.innerHTML = `
         <div class="nameplate-bar">
           ${bgEl}
           <div class="np-content">
-            <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
-            <span class="np-name">${escHtml(p.displayName)}</span>
-            <div class="np-right">${npClanEl}${npActivityEl}</div>
+            <div class="np-row1">
+              <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
+              <span class="np-name">${escHtml(p.displayName)}</span>
+              ${npClanEl}
+            </div>
+            ${npActivityEl ? `<div class="np-row2">${npActivityEl}</div>` : ""}
           </div>
         </div>`;
     } else {
