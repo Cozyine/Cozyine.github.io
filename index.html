@@ -191,6 +191,8 @@
     .badges { display:flex; flex-wrap:wrap; gap:6px; }
     .badge { font-size:12px; padding:4px 11px; border-radius:100px; background:var(--card2); border:1px solid var(--border); color:var(--text2); transition:all .25s; cursor:default; }
     .badge:hover { border-color:var(--accent); color:var(--text); transform:translateY(-2px); }
+    .badge-icon { padding:6px 8px; display:inline-flex; align-items:center; justify-content:center; }
+    .badge-icon:hover { transform:translateY(-2px) scale(1.15); border-color:var(--accent); }
 
     .id-block { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:var(--rsm); background:var(--card2); border:1px solid var(--border); cursor:pointer; transition:all .25s; user-select:none; }
     .id-block:hover { border-color:rgba(88,101,242,.3); }
@@ -441,11 +443,11 @@
         <div class="badges" style="margin-top:12px">
           ${p.badges.map(b=>{
             const inner = b.iconUrl
-              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
-              : `🏅 ${escHtml(b.label)}`;
+              ? `<img src="${escHtml(b.iconUrl)}" title="${escHtml(b.label)}" style="width:20px;height:20px;vertical-align:middle;object-fit:contain;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))">`
+              : `🏅`;
             return b.link
-              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
-              : `<span class="badge">${inner}</span>`;
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge badge-icon" title="${escHtml(b.label)}" style="text-decoration:none">${inner}</a>`
+              : `<span class="badge badge-icon" title="${escHtml(b.label)}">${inner}</span>`;
           }).join("")}
         </div>` : ""}`;
     bioSec.style.opacity = "1";
