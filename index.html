@@ -179,8 +179,8 @@
 
     .av-decoration {
       position: absolute;
-      width: 130%;
-      height: 130%;
+      width: 164px;
+      height: 164px;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -238,13 +238,13 @@
     .odot.offline { background: #747f8d; }
 
     .top-badges {
-      position: absolute;
-      top: 108px;
-      right: 20px;
       display: flex;
       flex-direction: column;
       gap: 6px;
       align-items: flex-end;
+      justify-content: flex-end;
+      padding-bottom: 6px;
+      flex: 1;
       z-index: 3;
     }
 
@@ -675,9 +675,9 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-  </div>
-  <div class="top-badges" id="topBadges">
-    <span class="chip" style="opacity:.4">Loading…</span>
+    <div class="top-badges" id="topBadges">
+      <span class="chip" style="opacity:.4">Loading…</span>
+    </div>
   </div>
 
   <div class="body" id="cardBody">
@@ -948,6 +948,66 @@
   }
 
   loadProfile();
+
+  // Poll presence every 20 s to keep status/activity live
+  setInterval(async () => {
+    try {
+      const res = await fetch(`${API}/presence`);
+      if (!res.ok) return;
+      const p = await res.json();
+      // Update status dot + pill
+      const status = p.status || "offline";
+      const dot = document.querySelector(".av-status");
+      if (dot) {
+        dot.className = `av-status ${status}`;
+        dot.title = STATUS_LABEL[status] || status;
+      }
+      const pill = document.querySelector(".online-pill");
+      if (pill) {
+        pill.className = `online-pill ${status}`;
+        pill.innerHTML = `<span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}`;
+      }
+      // Re-render activity section only
+      const actSec = document.getElementById("activitySection");
+      if (!actSec) return;
+      const activity = p.activity || null;
+      if (activity) {
+        const typeIcon = { spotify:"🎵", playing:"🎮", streaming:"📡", watching:"📺", competing:"🏆", custom:"✨" }[activity.type] || "💻";
+        const elapsed = activity.start ? formatElapsed(activity.start) : null;
+        actSec.innerHTML = `
+          <div class="lbl">Current Activity</div>
+          <div class="activity-card">
+            <div class="activity-icon">
+              ${activity.largeImage
+                ? `<img class="large" src="${escHtml(activity.largeImage)}" alt="activity">${activity.smallImage ? `<img class="small" src="${escHtml(activity.smallImage)}" alt="" title="${escHtml(activity.smallText||'')}">` : ""}`
+                : typeIcon}
+            </div>
+            <div style="min-width:0;flex:1">
+              <div class="activity-name">${escHtml(activity.name)}</div>
+              ${activity.details ? `<div class="activity-detail">${escHtml(activity.details)}</div>` : ""}
+              ${activity.state   ? `<div class="activity-detail">${escHtml(activity.state)}</div>`   : ""}
+              ${elapsed          ? `<div class="activity-detail" id="actElapsed">${elapsed}</div>`   : ""}
+            </div>
+          </div>`;
+        actSec.style.opacity = "1";
+        document.getElementById("r2").style.opacity = "1";
+        document.getElementById("r3").style.opacity = "1";
+        if (activity.start) {
+          clearInterval(window._elapsedTimer);
+          window._elapsedTimer = setInterval(() => {
+            const el = document.getElementById("actElapsed");
+            if (el) el.textContent = formatElapsed(activity.start);
+          }, 1000);
+        }
+      } else {
+        actSec.innerHTML = "";
+        actSec.style.opacity = "0";
+        document.getElementById("r2").style.opacity = "0";
+        document.getElementById("r3").style.opacity = "1";
+        clearInterval(window._elapsedTimer);
+      }
+    } catch (_) {}
+  }, 20_000);
 </script>
 </body>
 </html>
