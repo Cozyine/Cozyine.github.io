@@ -1,38 +1,17 @@
 {
   "1432550259099439125": {
-    "startup": {
-      "src": "https://cdn.discordapp.com/assets/content/bcc70eb7a4c36e614600a7d492a5cb3ceaa7859b99e9243565895eb01ac1a885",
-      "width": 450,
-      "height": 880
-    },
-    "remain": {
-      "src": "https://cdn.discordapp.com/assets/content/42e9dbdac96efdec1062e73c5740fdd87b90a6e5ef144af923b414ae648ded19",
-      "width": 450,
-      "height": 880
-    }
+    "startup": "https://cdn.discordapp.com/assets/content/bcc70eb7a4c36e614600a7d492a5cb3ceaa7859b99e9243565895eb01ac1a885",
+    "remain":  "https://cdn.discordapp.com/assets/content/42e9dbdac96efdec1062e73c5740fdd87b90a6e5ef144af923b414ae648ded19",
+    "duration": 3000
   },
   "1285465421276905582": {
-    "startup": {
-      "src": "https://cdn.discordapp.com/assets/content/6daf45b8cfcf8f4c81767ea6ebdfe3105547600dcab6732f6c1544c18dde22a5",
-      "width": 450,
-      "height": 880
-    },
-    "remain": {
-      "src": "https://cdn.discordapp.com/assets/content/1196bee1cf9864fa7ebe70c1495f768ed99dc66464e1bcd856397bb5c14d5c41",
-      "width": 450,
-      "height": 880
-    }
+    "startup": "https://cdn.discordapp.com/assets/content/6daf45b8cfcf8f4c81767ea6ebdfe3105547600dcab6732f6c1544c18dde22a5",
+    "remain":  "https://cdn.discordapp.com/assets/content/1196bee1cf9864fa7ebe70c1495f768ed99dc66464e1bcd856397bb5c14d5c41",
+    "duration": 3000
   },
   "1432550259170742436": {
-    "startup": {
-      "src": "https://cdn.discordapp.com/assets/content/873c242b5f499223e727fe16ec292c08085a7fc5a41f98158ababd6ad933fd5e",
-      "width": 450,
-      "height": 880
-    },
-    "remain": {
-      "src": "https://cdn.discordapp.com/assets/content/df8a3f944bd0b542b5eab2ef69961f61b462e8bcb75ede94f4cabd4c57e4508e",
-      "width": 450,
-      "height": 880
-    }
+    "startup": "https://cdn.discordapp.com/assets/content/873c242b5f499223e727fe16ec292c08085a7fc5a41f98158ababd6ad933fd5e",
+    "remain":  "https://cdn.discordapp.com/assets/content/df8a3f944bd0b542b5eab2ef69961f61b462e8bcb75ede94f4cabd4c57e4508e",
+    "duration": 3000
   }
 }
