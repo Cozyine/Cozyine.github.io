@@ -301,7 +301,6 @@
       margin-bottom: 14px;
       background: #111214;
     }
-    /* video/img fills entire bar as background */
     .nameplate-bar > video,
     .nameplate-bar > img.np-bg {
       position: absolute;
@@ -312,7 +311,13 @@
       object-position: center;
       display: block;
     }
-    /* content on top of video */
+    /* dark accent overlay on left so text is always readable */
+    .np-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, var(--np-accent, #0008) 0%, transparent 60%);
+      z-index: 0;
+    }
     .np-content {
       position: absolute;
       inset: 0;
@@ -321,9 +326,8 @@
       flex-direction: column;
       justify-content: center;
       padding: 0 10px;
-      gap: 2px;
+      gap: 3px;
     }
-    /* top row: avatar + name + clan tag */
     .np-row1 {
       display: flex;
       align-items: center;
@@ -361,19 +365,13 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .np-clan img {
-      width: 13px;
-      height: 13px;
-      border-radius: 3px;
-      object-fit: cover;
-    }
-    /* bottom row: activity */
+    .np-clan img { width: 13px; height: 13px; border-radius: 3px; object-fit: cover; }
     .np-row2 {
       display: flex;
       align-items: center;
       gap: 5px;
+      padding-left: 28px;
       min-width: 0;
-      padding-left: 28px; /* align under name, past avatar */
     }
     .np-activity {
       display: inline-flex;
@@ -387,13 +385,7 @@
       text-overflow: ellipsis;
       text-shadow: 0 1px 3px rgba(0,0,0,.9);
     }
-    .np-activity img {
-      width: 12px;
-      height: 12px;
-      border-radius: 2px;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
+    .np-activity img { width: 12px; height: 12px; border-radius: 2px; object-fit: cover; flex-shrink: 0; }
 
     /* ── Clan tag next to display name ── */
     .clan-tag {
@@ -411,12 +403,7 @@
       vertical-align: middle;
       margin-left: 6px;
     }
-    .clan-tag img {
-      width: 14px;
-      height: 14px;
-      border-radius: 3px;
-      object-fit: cover;
-    }
+    .clan-tag img { width: 14px; height: 14px; border-radius: 3px; object-fit: cover; }
 
     .online-pill {
       display: inline-flex;
@@ -853,28 +840,32 @@
       avEl.replaceWith(img);
     }
 
+    // Decoration — must run AFTER avatar swap so ring is still in DOM
     if (p.decorationUrl) {
       const ring = document.querySelector(".av-ring");
-      const existing = ring.querySelector(".av-decoration");
-      if (existing) existing.remove();
-      const dec = document.createElement("img");
-      dec.className = "av-decoration";
-      dec.src = p.decorationUrl;
-      dec.alt = "";
-      ring.appendChild(dec);
+      if (ring) {
+        const existingDec = ring.querySelector(".av-decoration");
+        if (existingDec) existingDec.remove();
+        const dec = document.createElement("img");
+        dec.className = "av-decoration";
+        dec.src = p.decorationUrl;
+        dec.alt = "";
+        ring.appendChild(dec);
+      }
     }
 
     const dot = document.querySelector(".av-status");
     dot.className = `av-status ${status}`;
     dot.title = STATUS_LABEL[status] || status;
 
+    // Banner — solid accent color only, no gradient; animated if bannerUrl exists
     if (p.bannerUrl) {
       const bi = document.getElementById("bannerImg");
       bi.style.backgroundImage = `url(${p.bannerUrl})`;
       bi.classList.add("loaded");
     } else if (p.accentColor) {
-      document.getElementById("banner").style.background =
-        `linear-gradient(125deg, ${p.accentColor}88 0%, ${p.accentColor} 55%, #b5206e 100%)`;
+      document.getElementById("banner").style.background = p.accentColor;
+    }
     }
 
     if (p.effectUrl) {
@@ -903,29 +894,32 @@
       </div>
     `;
 
-    // Nameplate bar
-    // Layout: [avatar] [name] [clan tag]   ← row 1
-    //                  [🎮 activity name]  ← row 2
+    // Nameplate bar — left overlay darkened to match accent, clan tag + activity below name
     const npSec = document.getElementById("nameplateSection");
     if (p.nameplateAnimatedUrl || p.nameplateUrl) {
       const bgEl = p.nameplateAnimatedUrl
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
 
+      // darken left side with the accent color
+      const accentDark = p.accentColor ? p.accentColor + "cc" : "rgba(0,0,0,0.8)";
+      const overlayStyle = `--np-accent:${accentDark}`;
+
       const npClanEl = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
         : "";
 
-      const activityIcon = activity && activity.largeImage
+      const actIcon = activity && activity.largeImage
         ? `<img src="${escHtml(activity.largeImage)}" alt="">`
-        : activity ? "🎮" : "";
+        : "🎮";
       const npActivityEl = activity && activity.name
-        ? `<span class="np-activity">${activityIcon} ${escHtml(activity.name)}</span>`
+        ? `<span class="np-activity">${actIcon} ${escHtml(activity.name)}</span>`
         : "";
 
       npSec.innerHTML = `
         <div class="nameplate-bar">
           ${bgEl}
+          <div class="np-overlay" style="${overlayStyle}"></div>
           <div class="np-content">
             <div class="np-row1">
               <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
