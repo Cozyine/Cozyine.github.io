@@ -544,7 +544,7 @@
 </div>
 
 <script>
-  const API = "https://soft-forest-a8c2.cozyine.workers.dev";
+  const API = "https://soft-forest-a8c2.fourstep20.workers.dev";
 
   const STATUS_LABEL = { online: "Online", idle: "Idle", dnd: "Do Not Disturb", offline: "Offline" };
 
@@ -592,15 +592,17 @@
     const status = p.status || "offline";
 
     const avEl = document.getElementById("avatarEl");
-    const img = document.createElement("img");
-    img.className = "av-img";
-    img.src = p.avatarUrl;
-    img.alt = "avatar";
-    img.onerror = () => {
-      img.replaceWith(avEl);
-      avEl.textContent = (p.displayName[0] || "?").toUpperCase();
-    };
-    avEl.replaceWith(img);
+    if (avEl) {
+      const img = document.createElement("img");
+      img.className = "av-img";
+      img.src = p.avatarUrl;
+      img.alt = "avatar";
+      img.onerror = () => {
+        img.replaceWith(avEl);
+        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
+      };
+      avEl.replaceWith(img);
+    }
 
     const dot = document.querySelector(".av-status");
     dot.className = `av-status ${status}`;
