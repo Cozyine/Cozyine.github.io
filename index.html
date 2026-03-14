@@ -179,13 +179,13 @@
 
     .av-decoration {
       position: absolute;
-      width: 120%;
-      height: 120%;
+      width: 130%;
+      height: 130%;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 2;
+      z-index: 3;
       image-rendering: auto;
     }
 
@@ -208,6 +208,8 @@
       border-radius: 50%;
       display: block;
       object-fit: cover;
+      position: relative;
+      z-index: 1;
     }
 
     .av-fallback {
@@ -236,11 +238,14 @@
     .odot.offline { background: #747f8d; }
 
     .top-badges {
+      position: absolute;
+      top: 108px;
+      right: 20px;
       display: flex;
+      flex-direction: column;
       gap: 6px;
-      padding-bottom: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
+      align-items: flex-end;
+      z-index: 3;
     }
 
     .chip {
@@ -670,9 +675,9 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges" id="topBadges">
-      <span class="chip" style="opacity:.4">Loading…</span>
-    </div>
+  </div>
+  <div class="top-badges" id="topBadges">
+    <span class="chip" style="opacity:.4">Loading…</span>
   </div>
 
   <div class="body" id="cardBody">
