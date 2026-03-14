@@ -179,14 +179,32 @@
 
     .av-decoration {
       position: absolute;
-      width: 164px;
-      height: 164px;
+      width: 120%;
+      height: 120%;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 3;
       image-rendering: auto;
+    }
+
+    .av-img, .av-fallback {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      display: block;
+      object-fit: cover;
+    }
+
+    .av-fallback {
+      background: linear-gradient(135deg, #5865f2, #eb459e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 800;
+      color: #fff;
     }
 
     .av-status {
@@ -199,27 +217,6 @@
       background: var(--green);
       border: 3px solid var(--card);
       transition: background .3s, border-color .4s var(--ease);
-      z-index: 4;
-    }
-
-    .av-img, .av-fallback {
-      width: 82px;
-      height: 82px;
-      border-radius: 50%;
-      display: block;
-      object-fit: cover;
-      position: relative;
-      z-index: 1;
-    }
-
-    .av-fallback {
-      background: linear-gradient(135deg, #5865f2, #eb459e);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 30px;
-      font-weight: 800;
-      color: #fff;
     }
 
     .av-status.online  { background: #3ba55d; }
@@ -239,13 +236,10 @@
 
     .top-badges {
       display: flex;
-      flex-direction: column;
       gap: 6px;
-      align-items: flex-end;
+      padding-bottom: 10px;
+      flex-wrap: wrap;
       justify-content: flex-end;
-      padding-bottom: 6px;
-      flex: 1;
-      z-index: 3;
     }
 
     .chip {
@@ -336,31 +330,6 @@
 
     .bio-text { font-size: 14.5px; line-height: 1.7; color: var(--text2); }
     .no-bio   { font-size: 14px; color: var(--text3); font-style: italic; }
-
-    .nameplate-wrap {
-      position: relative;
-      display: inline-block;
-      margin-bottom: 2px;
-    }
-
-    .nameplate-img {
-      position: absolute;
-      left: -8px;
-      right: -8px;
-      top: 50%;
-      transform: translateY(-50%);
-      height: 140%;
-      width: calc(100% + 16px);
-      object-fit: cover;
-      pointer-events: none;
-      border-radius: 6px;
-      opacity: .55;
-    }
-
-    .nameplate-text {
-      position: relative;
-      z-index: 1;
-    }
 
     .activity-card {
       display: flex;
@@ -628,29 +597,6 @@
 
     .t-icon { font-size: 14px; line-height: 1; }
 
-    .nameplate-wrap {
-      position: relative;
-      display: inline-block;
-      line-height: 1;
-    }
-
-    .nameplate-img {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      width: calc(100% + 48px);
-      height: calc(100% + 20px);
-      pointer-events: none;
-      object-fit: contain;
-      z-index: 0;
-    }
-
-    .nameplate-text {
-      position: relative;
-      z-index: 1;
-    }
-
     @media (max-width: 480px) {
       .dname { font-size: 20px; }
       .body  { padding: 14px 18px 20px; }
@@ -675,8 +621,9 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges" id="topBadges">
-      <span class="chip" style="opacity:.4">Loading…</span>
+    <div class="top-badges">
+      <span class="chip hi">⚡ Discord</span>
+      <span class="chip" id="chipExtra">Loading</span>
     </div>
   </div>
 
@@ -770,10 +717,8 @@
       img.src = p.avatarUrl;
       img.alt = "avatar";
       img.onerror = () => {
-        const fb = document.createElement("div");
-        fb.className = "av-fallback";
-        fb.textContent = (p.displayName[0] || "?").toUpperCase();
-        img.replaceWith(fb);
+        img.replaceWith(avEl);
+        avEl.textContent = (p.displayName[0] || "?").toUpperCase();
       };
       avEl.replaceWith(img);
     }
@@ -786,8 +731,7 @@
       dec.className = "av-decoration";
       dec.src = p.decorationUrl;
       dec.alt = "";
-      // Insert as first child so it sits under the status dot
-      ring.insertBefore(dec, ring.firstChild);
+      ring.appendChild(dec);
     }
 
     const dot = document.querySelector(".av-status");
@@ -815,25 +759,11 @@
       });
     }
 
-    // ── Top badge chips — max 2 ───────────────────────────────────────────────
-    const topBadges = document.getElementById("topBadges");
-    if (p.badges && p.badges.length) {
-      topBadges.innerHTML = p.badges.slice(0, 2)
-        .map(b => `<span class="chip">${escHtml(b.label)}</span>`)
-        .join("");
-    } else {
-      topBadges.innerHTML = `<span class="chip">Member</span>`;
-    }
+    document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0]}` : "Member";
 
     document.getElementById("skeleton").innerHTML = `
       <div>
-        <div class="dname">
-          ${p.nameplateUrl ? `
-          <span class="nameplate-wrap">
-            <img class="nameplate-img" src="${escHtml(p.nameplateUrl)}" alt="" onerror="this.style.display='none'">
-            <span class="nameplate-text">${escHtml(p.displayName)}</span>
-          </span>` : escHtml(p.displayName)}
-        </div>
+        <div class="dname">${escHtml(p.displayName)}</div>
         <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
@@ -848,9 +778,12 @@
       ${p.badges && p.badges.length ? `
         <div class="badges" style="margin-top:12px">
           ${p.badges.map(b => {
+            const inner = b.iconUrl
+              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
+              : `🏅 ${escHtml(b.label)}`;
             return b.link
-              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${escHtml(b.label)}</a>`
-              : `<span class="badge">${escHtml(b.label)}</span>`;
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
+              : `<span class="badge">${inner}</span>`;
           }).join("")}
         </div>` : ""}
     `;
@@ -922,8 +855,7 @@
         <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span>
       </div>
     `;
-    const topBadges = document.querySelector(".top-badges");
-    if (topBadges) topBadges.innerHTML = `<span class="chip">Offline</span>`;
+    document.getElementById("chipExtra").textContent = "Offline";
     document.getElementById("r2").style.opacity = "1";
     document.getElementById("idSection").style.opacity = "1";
   }
@@ -948,66 +880,6 @@
   }
 
   loadProfile();
-
-  // Poll presence every 20 s to keep status/activity live
-  setInterval(async () => {
-    try {
-      const res = await fetch(`${API}/presence`);
-      if (!res.ok) return;
-      const p = await res.json();
-      // Update status dot + pill
-      const status = p.status || "offline";
-      const dot = document.querySelector(".av-status");
-      if (dot) {
-        dot.className = `av-status ${status}`;
-        dot.title = STATUS_LABEL[status] || status;
-      }
-      const pill = document.querySelector(".online-pill");
-      if (pill) {
-        pill.className = `online-pill ${status}`;
-        pill.innerHTML = `<span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}`;
-      }
-      // Re-render activity section only
-      const actSec = document.getElementById("activitySection");
-      if (!actSec) return;
-      const activity = p.activity || null;
-      if (activity) {
-        const typeIcon = { spotify:"🎵", playing:"🎮", streaming:"📡", watching:"📺", competing:"🏆", custom:"✨" }[activity.type] || "💻";
-        const elapsed = activity.start ? formatElapsed(activity.start) : null;
-        actSec.innerHTML = `
-          <div class="lbl">Current Activity</div>
-          <div class="activity-card">
-            <div class="activity-icon">
-              ${activity.largeImage
-                ? `<img class="large" src="${escHtml(activity.largeImage)}" alt="activity">${activity.smallImage ? `<img class="small" src="${escHtml(activity.smallImage)}" alt="" title="${escHtml(activity.smallText||'')}">` : ""}`
-                : typeIcon}
-            </div>
-            <div style="min-width:0;flex:1">
-              <div class="activity-name">${escHtml(activity.name)}</div>
-              ${activity.details ? `<div class="activity-detail">${escHtml(activity.details)}</div>` : ""}
-              ${activity.state   ? `<div class="activity-detail">${escHtml(activity.state)}</div>`   : ""}
-              ${elapsed          ? `<div class="activity-detail" id="actElapsed">${elapsed}</div>`   : ""}
-            </div>
-          </div>`;
-        actSec.style.opacity = "1";
-        document.getElementById("r2").style.opacity = "1";
-        document.getElementById("r3").style.opacity = "1";
-        if (activity.start) {
-          clearInterval(window._elapsedTimer);
-          window._elapsedTimer = setInterval(() => {
-            const el = document.getElementById("actElapsed");
-            if (el) el.textContent = formatElapsed(activity.start);
-          }, 1000);
-        }
-      } else {
-        actSec.innerHTML = "";
-        actSec.style.opacity = "0";
-        document.getElementById("r2").style.opacity = "0";
-        document.getElementById("r3").style.opacity = "1";
-        clearInterval(window._elapsedTimer);
-      }
-    } catch (_) {}
-  }, 20_000);
 </script>
 </body>
 </html>
