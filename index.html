@@ -87,7 +87,7 @@
     }
     .av-ring:hover::before { opacity: 1; }
     .av-decoration {
-      position: absolute; width: 140%; height: 140%;
+      position: absolute; width: 116%; height: 116%;
       top: 50%; left: 50%; transform: translate(-50%,-50%);
       pointer-events: none; z-index: 3; image-rendering: auto;
     }
@@ -191,6 +191,7 @@
     .badges { display:flex; flex-wrap:wrap; gap:6px; }
     .badge { font-size:12px; padding:4px 11px; border-radius:100px; background:var(--card2); border:1px solid var(--border); color:var(--text2); transition:all .25s; cursor:default; }
     .badge:hover { border-color:var(--accent); color:var(--text); transform:translateY(-2px); }
+    .badge-icon { width:16px; height:16px; vertical-align:middle; object-fit:contain; flex-shrink:0; }
 
     .id-block { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:var(--rsm); background:var(--card2); border:1px solid var(--border); cursor:pointer; transition:all .25s; user-select:none; }
     .id-block:hover { border-color:rgba(88,101,242,.3); }
@@ -234,10 +235,7 @@
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
     </div>
-    <div class="top-badges">
-      <span class="chip hi">⚡ Discord</span>
-      <span class="chip" id="chipExtra">Loading</span>
-    </div>
+    <div class="top-badges" id="topBadges"></div>
   </div>
   <div class="body" id="cardBody">
     <div id="skeleton">
@@ -295,6 +293,91 @@
     });
   }
 
+  // ── Effect video rendering ─────────────────────────────────────────────────
+  // Parse the effects.json from /proxy-effect and pick the right video src.
+  // The JSON looks like: { items: [{ effects: [{ src, zIndex, loop, ... }] }] }
+  // The src values are either full URLs (https://cdn.discordapp.com/assets/content/<hash>)
+  // or bare content hashes. We render them as looping <video> elements.
+  async function renderEffect(effectId, effectEl) {
+    effectEl.innerHTML = "";
+    try {
+      const res = await fetch(`${API}/proxy-effect?id=${effectId}`);
+      if (!res.ok) { console.warn("effect 404/error:", res.status); return; }
+      const data = await res.json();
+
+      // Unwrap: data might be the raw effects.json or already unwrapped items[0]
+      let effects = [];
+      if (Array.isArray(data.effects)) {
+        effects = data.effects;                           // already unwrapped
+      } else if (Array.isArray(data.items)) {
+        effects = data.items[0]?.effects || [];           // raw effects.json
+      }
+
+      if (!effects.length) { console.warn("no effects array found", data); return; }
+
+      // Sort by zIndex so layers stack correctly
+      effects.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+
+      for (const layer of effects) {
+        let src = layer.src || "";
+        // Normalise: bare hash → full URL
+        if (src && !src.startsWith("http")) {
+          src = `https://cdn.discordapp.com/assets/content/${src}`;
+        }
+        if (!src) continue;
+
+        const vid = document.createElement("video");
+        vid.autoplay  = true;
+        vid.loop      = layer.loop !== false;  // default loop
+        vid.muted     = true;
+        vid.playsInline = true;
+        vid.style.cssText = [
+          "position:absolute", "inset:0", "width:100%", "height:100%",
+          "object-fit:cover", "pointer-events:none",
+          `z-index:${layer.zIndex ?? 0}`,
+        ].join(";");
+
+        // Handle loopDelay: pause at end, wait, then restart
+        if (layer.loopDelay && layer.loopDelay > 0) {
+          vid.loop = false;
+          vid.addEventListener("ended", () => {
+            setTimeout(() => { vid.currentTime = 0; vid.play(); }, layer.loopDelay);
+          });
+        }
+
+        // Handle start delay
+        if (layer.start && layer.start > 0) {
+          vid.style.opacity = "0";
+          setTimeout(() => { vid.style.opacity = "1"; vid.play(); }, layer.start);
+          vid.autoplay = false;
+        }
+
+        const source = document.createElement("source");
+        source.src  = src;
+        // Detect format from URL extension or default to webm
+        source.type = src.includes(".apng") ? "image/apng"
+                    : src.includes(".gif")  ? "image/gif"
+                    : "video/webm";
+        vid.appendChild(source);
+        effectEl.appendChild(vid);
+      }
+    } catch(e) {
+      console.warn("effect render error:", e);
+    }
+  }
+
+  // ── Badge icon helper ──────────────────────────────────────────────────────
+  function badgeHtml(b) {
+    let iconHtml = "";
+    if (b.iconUrl) {
+      iconHtml = `<img src="${escHtml(b.iconUrl)}" class="badge-icon" alt="" onerror="this.style.display='none'">`;
+    }
+    const inner = `${iconHtml}${escHtml(b.label || "Badge")}`;
+    return b.link
+      ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px">${inner}</a>`
+      : `<span class="badge" style="display:inline-flex;align-items:center;gap:4px">${inner}</span>`;
+  }
+
   async function loadProfile() {
     try {
       const res = await fetch(`${API}/all`);
@@ -320,17 +403,26 @@
       };
       img.src = p.avatarUrl;
       avEl.replaceWith(img);
+    } else {
+      // On subsequent refreshes, update src in place
+      const existing = document.querySelector(".av-img");
+      if (existing && existing.src !== p.avatarUrl) existing.src = p.avatarUrl;
     }
 
     // Avatar decoration
-    if (p.decorationUrl) {
-      const ring = document.querySelector(".av-ring");
-      if (ring) {
-        const ex = ring.querySelector(".av-decoration");
-        if (ex) ex.remove();
-        const dec = document.createElement("img");
-        dec.className = "av-decoration"; dec.src = p.decorationUrl; dec.alt = "";
-        ring.appendChild(dec);
+    const ring = document.querySelector(".av-ring");
+    if (ring) {
+      const ex = ring.querySelector(".av-decoration");
+      if (p.decorationUrl) {
+        if (ex) {
+          ex.src = p.decorationUrl;
+        } else {
+          const dec = document.createElement("img");
+          dec.className = "av-decoration"; dec.src = p.decorationUrl; dec.alt = "";
+          ring.appendChild(dec);
+        }
+      } else if (ex) {
+        ex.remove();
       }
     }
 
@@ -339,7 +431,7 @@
     dot.className = `av-status ${status}`;
     dot.title = STATUS_LABEL[status]||status;
 
-    // Banner — solid accent color (no gradient), or banner image
+    // Banner
     if (p.bannerUrl) {
       const bi = document.getElementById("bannerImg");
       bi.style.backgroundImage = `url(${p.bannerUrl})`;
@@ -348,60 +440,31 @@
       document.getElementById("banner").style.background = p.accentColor;
     }
 
-    // Profile effect — load config from worker KV, render as video
-    if (p.effectUrl) {
-      const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
-      if (effectId) {
-        const effectEl = document.getElementById("profileEffect");
-        effectEl.innerHTML = "";
-        fetch(`${API}/proxy-effect?id=${effectId}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(cfg => {
-            if (!cfg) return;
-            // cfg is already items[0] (worker unwraps it)
-            // effects array contains the video layers sorted by zIndex
-            const effects = cfg.effects || [];
-            // Sort by zIndex so layers stack correctly
-            effects.sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
-            effects.forEach(fx => {
-              if (!fx.src) return;
-              const vid = document.createElement("video");
-              vid.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;`;
-              vid.muted = true;
-              vid.playsInline = true;
-              vid.loop = !!fx.loop;
-              // Build absolute CDN url if src is relative
-              const src = fx.src.startsWith("http")
-                ? fx.src
-                : `https://cdn.discordapp.com${fx.src.startsWith("/") ? "" : "/"}${fx.src}`;
-              vid.src = src;
-              // Apply start delay before playing
-              const startDelay = (fx.start || 0);
-              if (startDelay > 0) {
-                vid.style.opacity = "0";
-                setTimeout(() => { vid.style.opacity = "1"; vid.play().catch(()=>{}); }, startDelay);
-              } else {
-                vid.play().catch(() => {});
-              }
-              // Loop delay: pause after each loop iteration then resume
-              if (fx.loop && fx.loopDelay > 0) {
-                vid.loop = false;
-                vid.addEventListener("ended", function restart() {
-                  setTimeout(() => { vid.currentTime = 0; vid.play().catch(()=>{}); }, fx.loopDelay);
-                });
-              }
-              effectEl.appendChild(vid);
-            });
-          })
-          .catch(() => {});
+    // Profile effect — video-based, parsed from effects.json
+    const effectId = p.effectUrl?.match(/profile-effects\/(\d+)\//)?.[1];
+    const effectEl = document.getElementById("profileEffect");
+    const prevEffectId = effectEl.dataset.effectId;
+    if (effectId && effectId !== prevEffectId) {
+      effectEl.dataset.effectId = effectId;
+      renderEffect(effectId, effectEl);
+    }
+
+    // Top-right badges area (show badge icons or status)
+    const topBadges = document.getElementById("topBadges");
+    if (topBadges) {
+      if (p.badges?.length) {
+        topBadges.innerHTML = p.badges.slice(0, 3).map(b => {
+          if (b.iconUrl) {
+            return `<span class="chip" title="${escHtml(b.label||'')}" style="padding:4px 8px;display:inline-flex;align-items:center;gap:4px"><img src="${escHtml(b.iconUrl)}" style="width:16px;height:16px;vertical-align:middle" onerror="this.style.display='none'" alt=""> ${escHtml(b.label||'')}</span>`;
+          }
+          return `<span class="chip">🏅 ${escHtml(b.label||'Badge')}</span>`;
+        }).join("");
+      } else {
+        topBadges.innerHTML = "";
       }
     }
 
-    // Chips
-    document.getElementById("chipExtra").textContent =
-      p.badges.length ? `🏅 ${p.badges[0].label||"Badge"}` : "Member";
-
-    // Clan tag HTML
+    // Clan tag HTML helper
     const clanHtml = p.clanTag
       ? ` <span class="clan-tag">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
       : "";
@@ -453,14 +516,7 @@
         : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
       ${p.badges?.length ? `
         <div class="badges" style="margin-top:12px">
-          ${p.badges.map(b=>{
-            const inner = b.iconUrl
-              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
-              : `🏅 ${escHtml(b.label)}`;
-            return b.link
-              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
-              : `<span class="badge">${inner}</span>`;
-          }).join("")}
+          ${p.badges.map(b => badgeHtml(b)).join("")}
         </div>` : ""}`;
     bioSec.style.opacity = "1";
 
@@ -514,7 +570,8 @@
     document.getElementById("skeleton").innerHTML = `
       <div class="error-box">⚠️ Couldn't load profile.<br>
       <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span></div>`;
-    document.getElementById("chipExtra").textContent = "Offline";
+    const tb = document.getElementById("topBadges");
+    if (tb) tb.innerHTML = "";
     document.getElementById("r2").style.opacity = "1";
     document.getElementById("idSection").style.opacity = "1";
   }
@@ -529,7 +586,9 @@
     return h>0?`${pad(h)}:${pad(m)}:${pad(s)} elapsed`:`${pad(m)}:${pad(s)} elapsed`;
   }
 
+  // Initial load + 60s auto-refresh for avatar/banner/decos/badges
   loadProfile();
+  setInterval(loadProfile, 60_000);
 </script>
 </body>
 </html>
