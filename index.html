@@ -185,8 +185,21 @@
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
-      z-index: 3;
+      z-index: 2;
       image-rendering: auto;
+    }
+
+    .av-status {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 3px solid var(--card);
+      transition: background .3s, border-color .4s var(--ease);
+      z-index: 4;
     }
 
     .av-img, .av-fallback {
@@ -205,18 +218,6 @@
       font-size: 30px;
       font-weight: 800;
       color: #fff;
-    }
-
-    .av-status {
-      position: absolute;
-      bottom: 6px;
-      right: 6px;
-      width: 17px;
-      height: 17px;
-      border-radius: 50%;
-      background: var(--green);
-      border: 3px solid var(--card);
-      transition: background .3s, border-color .4s var(--ease);
     }
 
     .av-status.online  { background: #3ba55d; }
@@ -780,7 +781,8 @@
       dec.className = "av-decoration";
       dec.src = p.decorationUrl;
       dec.alt = "";
-      ring.appendChild(dec);
+      // Insert as first child so it sits under the status dot
+      ring.insertBefore(dec, ring.firstChild);
     }
 
     const dot = document.querySelector(".av-status");
@@ -808,14 +810,14 @@
       });
     }
 
-    // ── Top badge chips (text only, no icons/emoji) ───────────────────────────
+    // ── Top badge chips — max 2 ───────────────────────────────────────────────
     const topBadges = document.getElementById("topBadges");
     if (p.badges && p.badges.length) {
-      topBadges.innerHTML = p.badges
+      topBadges.innerHTML = p.badges.slice(0, 2)
         .map(b => `<span class="chip">${escHtml(b.label)}</span>`)
         .join("");
     } else {
-      topBadges.innerHTML = "";
+      topBadges.innerHTML = `<span class="chip">Member</span>`;
     }
 
     document.getElementById("skeleton").innerHTML = `
