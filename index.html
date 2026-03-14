@@ -291,38 +291,64 @@
 
     .handle em { color: var(--accent); font-style: normal; }
 
-    .nameplate-section {
-      width: 100%;
-      margin-bottom: 16px;
+    /* Nameplate — Discord-style username decoration bar */
+    .nameplate-bar {
       display: flex;
       align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      border-radius: var(--rsm);
-    }
-
-    .nameplate-section img {
-      width: 100%;
+      gap: 8px;
+      margin: 10px 0 4px;
+      padding: 5px 10px 5px 6px;
+      border-radius: 8px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      width: fit-content;
       max-width: 100%;
-      height: auto;
-      display: block;
-      image-rendering: auto;
+      position: relative;
+      overflow: hidden;
     }
 
+    .nameplate-bar-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.18;
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    .nameplate-bar-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      position: relative;
+      z-index: 1;
+      white-space: nowrap;
+    }
+
+    .nameplate-bar img.np-icon {
+      width: 20px;
+      height: 20px;
+      object-fit: contain;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Clan tag pill */
     .clan-tag {
       display: inline-flex;
       align-items: center;
       gap: 4px;
       font-size: 11px;
-      font-weight: 600;
-      padding: 2px 7px 2px 4px;
+      font-weight: 700;
+      padding: 2px 8px 2px 5px;
       border-radius: 6px;
       background: var(--card2);
       border: 1px solid var(--border2);
       color: var(--text2);
-      margin-left: 6px;
-      vertical-align: middle;
       white-space: nowrap;
+      vertical-align: middle;
     }
 
     .clan-tag img {
@@ -675,7 +701,7 @@
       <div class="skeleton sk-pill"></div>
     </div>
     <div class="rule" style="opacity:0" id="r1"></div>
-    <div id="nameplateSection" style="display:none"></div>
+    <div id="nameplateSection"></div>
     <div id="bioSection" style="opacity:0">
       <div class="lbl">About Me</div>
       <div class="skeleton sk-bio" id="bioSkeleton"></div>
@@ -806,24 +832,31 @@
 
     document.getElementById("chipExtra").textContent = p.badges.length ? `🏅 ${p.badges[0].label || "Badge"}` : "Member";
 
+    const clanHtml = p.clanTag
+      ? ` <span class="clan-tag">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>`
+      : "";
+
     document.getElementById("skeleton").innerHTML = `
       <div>
-        <div class="dname">${escHtml(p.displayName)}</div>
-        <div class="handle">
-          @<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}
-          ${p.clanTag ? `<span class="clan-tag">${p.clanBadgeUrl ? `<img src="${escHtml(p.clanBadgeUrl)}" alt="">` : ""}${escHtml(p.clanTag)}</span>` : ""}
-        </div>
+        <div class="dname">${escHtml(p.displayName)}${clanHtml}</div>
+        <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
     `;
 
-    // Nameplate — full width above About Me
+    // Nameplate bar — above About Me, styled like Discord's username bar
     const npSec = document.getElementById("nameplateSection");
     if (p.nameplateUrl) {
-      npSec.innerHTML = `<div class="nameplate-section"><img src="${escHtml(p.nameplateUrl)}" alt="nameplate"></div>`;
-      npSec.style.display = "block";
+      npSec.innerHTML = `
+        <div class="nameplate-bar">
+          <div class="nameplate-bar-bg" style="background-image:url('${escHtml(p.nameplateUrl)}')"></div>
+          <img class="np-icon" src="${escHtml(p.nameplateUrl)}" alt="nameplate">
+          <span class="nameplate-bar-name">${escHtml(p.displayName)}</span>
+        </div>`;
+      npSec.style.marginBottom = "12px";
     } else {
-      npSec.style.display = "none";
+      npSec.innerHTML = "";
+      npSec.style.marginBottom = "0";
     }
 
     const bioSec = document.getElementById("bioSection");
