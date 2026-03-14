@@ -808,7 +808,15 @@
       });
     }
 
-    document.getElementById("chipExtra").textContent = p.badges.length ? p.badges[0].label : "Member";
+    // ── Top badge chips (text only, no icons/emoji) ───────────────────────────
+    const topBadges = document.getElementById("topBadges");
+    if (p.badges && p.badges.length) {
+      topBadges.innerHTML = p.badges
+        .map(b => `<span class="chip">${escHtml(b.label)}</span>`)
+        .join("");
+    } else {
+      topBadges.innerHTML = "";
+    }
 
     document.getElementById("skeleton").innerHTML = `
       <div>
@@ -907,7 +915,8 @@
         <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span>
       </div>
     `;
-    document.getElementById("chipExtra").textContent = "Offline";
+    const topBadges = document.querySelector(".top-badges");
+    if (topBadges) topBadges.innerHTML = `<span class="chip">Offline</span>`;
     document.getElementById("r2").style.opacity = "1";
     document.getElementById("idSection").style.opacity = "1";
   }
