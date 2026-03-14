@@ -203,8 +203,23 @@
       border-radius: 50%;
       background: var(--green);
       border: 3px solid var(--card);
-      transition: border-color .4s var(--ease);
+      transition: background .3s, border-color .4s var(--ease);
     }
+
+    .av-status.online  { background: #3ba55d; }
+    .av-status.idle    { background: #faa81a; }
+    .av-status.dnd     { background: #ed4245; }
+    .av-status.offline { background: #747f8d; }
+
+    .online-pill.online  { color: #3ba55d; background: rgba(59,165,93,.1);  border-color: rgba(59,165,93,.2); }
+    .online-pill.idle    { color: #faa81a; background: rgba(250,168,26,.1); border-color: rgba(250,168,26,.2); }
+    .online-pill.dnd     { color: #ed4245; background: rgba(237,66,69,.1);  border-color: rgba(237,66,69,.2); }
+    .online-pill.offline { color: #747f8d; background: rgba(116,127,141,.1); border-color: rgba(116,127,141,.2); }
+
+    .odot.online  { background: #3ba55d; }
+    .odot.idle    { background: #faa81a; }
+    .odot.dnd     { background: #ed4245; }
+    .odot.offline { background: #747f8d; }
 
     .top-badges {
       display: flex;
@@ -529,7 +544,9 @@
 </div>
 
 <script>
-  const PROFILE_URL = "https://soft-forest-a8c2.cozyine.workers.dev/profile";
+  const API = "https://soft-forest-a8c2.cozyine.workers.dev";
+
+  const STATUS_LABEL = { online: "Online", idle: "Idle", dnd: "Do Not Disturb", offline: "Offline" };
 
   const root = document.documentElement;
   let dark = localStorage.getItem("theme") !== "light";
@@ -562,7 +579,7 @@
 
   async function loadProfile() {
     try {
-      const res = await fetch(PROFILE_URL);
+      const res = await fetch(`${API}/all`);
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const p = await res.json();
       renderProfile(p);
@@ -572,6 +589,8 @@
   }
 
   function renderProfile(p) {
+    const status = p.status || "offline";
+
     const avEl = document.getElementById("avatarEl");
     const img = document.createElement("img");
     img.className = "av-img";
@@ -582,6 +601,10 @@
       avEl.textContent = (p.displayName[0] || "?").toUpperCase();
     };
     avEl.replaceWith(img);
+
+    const dot = document.querySelector(".av-status");
+    dot.className = `av-status ${status}`;
+    dot.title = STATUS_LABEL[status] || status;
 
     if (p.bannerUrl) {
       const bi = document.getElementById("bannerImg");
@@ -597,8 +620,8 @@
     document.getElementById("skeleton").innerHTML = `
       <div>
         <div class="dname">${escHtml(p.displayName)}</div>
-        <div class="handle">@<em>${escHtml(p.username)}</em></div>
-        <div class="online-pill"><span class="odot"></span>Online</div>
+        <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns ? ` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>` : ""}</div>
+        <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status] || status)}</div>
       </div>
     `;
 
@@ -606,7 +629,7 @@
     bioSec.innerHTML = `
       <div class="lbl">About Me</div>
       ${p.bio
-        ? `<p class="bio-text">${escHtml(p.bio)}</p>`
+        ? `<p class="bio-text" style="white-space:pre-line">${escHtml(p.bio)}</p>`
         : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
       ${p.badges.length
         ? `<div class="badges" style="margin-top:12px">${p.badges.map(b => `<span class="badge">🏅 ${escHtml(b)}</span>`).join("")}</div>`
@@ -639,6 +662,8 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   }
+
+  loadProfile();
 
   loadProfile();
 </script>
