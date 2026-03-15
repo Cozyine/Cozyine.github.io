@@ -309,9 +309,10 @@
     const effect = EFFECTS_DB[effectId];
     if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
 
-    const startupDur = effect.startupDuration || 3000;
-    const remainDur  = effect.remainDuration  || 3000;
-    const interval   = effect.remainInterval  || 5000;
+    const startupDur  = effect.startupDuration || 3000;
+    const remainDur   = effect.remainDuration  || 3000;
+    const interval    = effect.remainInterval  || 5000;
+    const deleteStart = effect.deleteStartupAfterFinish === true;
     console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms`);
 
     const makeImg = (src, zIndex) => {
@@ -326,9 +327,16 @@
     const proxy      = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
     const proxyFresh = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}&t=${Date.now()}`;
 
-    // Show startup (plays once, stops)
+    // Show startup (plays once, stops — or gets removed if deleteStartupAfterFinish)
     const startImg = makeImg(proxy(effect.startup), 2);
     effectEl.appendChild(startImg);
+    if (deleteStart) {
+      setTimeout(() => {
+        startImg.style.transition = "opacity 0.2s";
+        startImg.style.opacity = "0";
+        setTimeout(() => startImg.remove(), 200);
+      }, startupDur);
+    }
 
     // After startup, cycle remain: play once → wait interval → repeat
     const playRemain = () => {
