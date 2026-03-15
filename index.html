@@ -329,14 +329,14 @@
     };
 
     if (SPECIAL) {
-      // Startup: play once and freeze
-      const startImg = makeImg(effect.startup, 2);
-      freezeApng(startImg, startupDur);
+      // Startup: proxied through worker with num_plays=1 so it stops after one cycle
+      const proxyUrl = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
+      const startImg = makeImg(proxyUrl(effect.startup), 2);
       effectEl.appendChild(startImg);
-      console.log("[effect] special mode: startup frozen, remain plays once every 5s after 3s");
+      console.log("[effect] special mode: startup proxied (no-loop), remain plays once every 5s after 3s");
 
       const playRemainOnce = () => {
-        const remainImg = makeImg(effect.remain, 3);
+        const remainImg = makeImg(proxyUrl(effect.remain), 3);
         remainImg.style.opacity = "0";
         effectEl.appendChild(remainImg);
         requestAnimationFrame(() => {
