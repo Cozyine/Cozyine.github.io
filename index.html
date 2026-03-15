@@ -66,8 +66,8 @@
     .banner-img.loaded { opacity: 1; }
     .profile-effect {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 1; overflow: hidden;
-      border-radius: var(--r) var(--r) 0 0;
+      pointer-events: none; z-index: 2; overflow: hidden;
+      border-radius: var(--r);
     }
 
     .av-row {
@@ -227,10 +227,10 @@
 <div class="orb o2"></div>
 
 <div class="card" id="card">
+  <div class="profile-effect" id="profileEffect"></div>
   <div class="banner" id="banner">
     <div class="banner-grid"></div>
     <div class="banner-img" id="bannerImg"></div>
-    <div class="profile-effect" id="profileEffect"></div>
   </div>
   <div class="av-row">
     <div class="av-ring">
