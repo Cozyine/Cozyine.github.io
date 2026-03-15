@@ -2,9 +2,9 @@
   "1432550259099439125": {
     "startup": "https://cdn.discordapp.com/assets/content/bcc70eb7a4c36e614600a7d492a5cb3ceaa7859b99e9243565895eb01ac1a885",
     "remain":  "https://cdn.discordapp.com/assets/content/42e9dbdac96efdec1062e73c5740fdd87b90a6e5ef144af923b414ae648ded19",
-    "startupDuration": 3000,
+    "startupDuration": 4000,
     "remainDuration": 3000,
-    "remainInterval": 5000,
+    "remainInterval": 4000,
     "deleteStartupAfterFinish": false,
     "discordAutoLoop": false
   },
