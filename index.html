@@ -313,7 +313,8 @@
     const remainDur   = effect.remainDuration  || 3000;
     const interval    = effect.remainInterval  || 5000;
     const deleteStart = effect.deleteStartupAfterFinish === true;
-    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms`);
+    const autoLoop    = effect.discordAutoLoop === true;
+    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms autoLoop=${autoLoop}`);
 
     const makeImg = (src, zIndex) => {
       const img = document.createElement("img");
@@ -322,21 +323,34 @@
       return img;
     };
 
-    // All images go through proxy to patch num_plays=1 (no self-looping)
-    // Cache-bust remain on every play so browser re-fetches and restarts the APNG
     const proxy      = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
     const proxyFresh = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}&t=${Date.now()}`;
 
-    // Show startup (plays once, stops — or gets removed if deleteStartupAfterFinish)
+    if (autoLoop) {
+      // Discord handles looping natively — just show both images directly, no proxy, no timers
+      const startImg = makeImg(effect.startup, 2);
+      effectEl.appendChild(startImg);
+      if (deleteStart) {
+        setTimeout(() => startImg.remove(), startupDur + 200);
+      }
+      const remainImg = makeImg(effect.remain, 3);
+      remainImg.style.opacity = "0";
+      effectEl.appendChild(remainImg);
+      setTimeout(() => {
+        remainImg.style.transition = "opacity 0.2s";
+        remainImg.style.opacity = "1";
+      }, startupDur);
+      return;
+    }
+
+    // Show startup via proxy (num_plays=1, no self-loop)
     const startImg = makeImg(proxy(effect.startup), 2);
     effectEl.appendChild(startImg);
     if (deleteStart) {
-      setTimeout(() => {
-        startImg.remove();
-      }, startupDur + 200);
+      setTimeout(() => startImg.remove(), startupDur + 200);
     }
 
-    // After startup, cycle remain: play once → wait interval → repeat
+    // After startup, cycle remain: play once → fade out → wait interval → repeat
     const playRemain = () => {
       const remainImg = makeImg(proxyFresh(effect.remain), 3);
       remainImg.style.opacity = "0";
