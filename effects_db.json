@@ -22,5 +22,21 @@
     "remainDuration": 4500,
     "remainInterval": 6000,
     "deleteStartupAfterFinish": false
+  },
+  "1343751621254971392": {
+    "startup": "https://cdn.discordapp.com/assets/content/f72e99b830a831d64fe735cee954b66393a08edf1fe48cb548dd0b27483ccb7e",
+    "remain":  "https://cdn.discordapp.com/assets/content/714daf4880f0d210b59075841c1a431d5df26922226ecfaf99cc052d29227dc4",
+    "startupDuration": 3000,
+    "remainDuration": 3000,
+    "remainInterval": 5000,
+    "deleteStartupAfterFinish": false
+  },
+  "1409898408063406170": {
+    "startup": "https://cdn.discordapp.com/assets/content/5231cca365b1d39335d55cabaf0f94c1892d7ccf1af302ebf809c138e2448039",
+    "remain":  "https://cdn.discordapp.com/assets/content/cd41ea723e90a4c4171c8c30ddcc5c1723abb02a37dbf4b49ff066bc90e990a3",
+    "startupDuration": 3000,
+    "remainDuration": 3000,
+    "remainInterval": 5000,
+    "deleteStartupAfterFinish": true
   }
 }
