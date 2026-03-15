@@ -320,27 +320,17 @@
     const startImg = makeImg(effect.startup);
     effectEl.appendChild(startImg);
 
-    // Preload remain so it's ready
+    // After duration, show remain on top — startup stays underneath (last frame visible)
     const remainImg = makeImg(effect.remain);
     remainImg.style.opacity = "0";
+    remainImg.style.zIndex = "3";
     effectEl.appendChild(remainImg);
 
-    // When startup duration ends: freeze it on last frame via canvas, then fade in remain
     const duration = effect.duration || 3000;
     setTimeout(() => {
-      // Snapshot current frame of startup into a canvas (freezes the APNG)
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width  = startImg.naturalWidth  || 450;
-        canvas.height = startImg.naturalHeight || 880;
-        canvas.style.cssText = startImg.style.cssText;
-        canvas.getContext("2d").drawImage(startImg, 0, 0);
-        startImg.replaceWith(canvas);
-      } catch(e) {
-        // Cross-origin fallback — just leave startup visible behind remain
-      }
+      remainImg.style.transition = "opacity 0.25s";
       remainImg.style.opacity = "1";
-    }, duration + 250);
+    }, duration);
   }
 
   // ── Badge icon helper ──────────────────────────────────────────────────────
