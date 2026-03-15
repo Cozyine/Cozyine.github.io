@@ -4,20 +4,23 @@
     "remain":  "https://cdn.discordapp.com/assets/content/42e9dbdac96efdec1062e73c5740fdd87b90a6e5ef144af923b414ae648ded19",
     "startupDuration": 3000,
     "remainDuration": 3000,
-    "remainInterval": 5000
+    "remainInterval": 5000,
+    "deleteStartupAfterFinish": false
   },
   "1285465421276905582": {
     "startup": "https://cdn.discordapp.com/assets/content/6daf45b8cfcf8f4c81767ea6ebdfe3105547600dcab6732f6c1544c18dde22a5",
     "remain":  "https://cdn.discordapp.com/assets/content/1196bee1cf9864fa7ebe70c1495f768ed99dc66464e1bcd856397bb5c14d5c41",
     "startupDuration": 3000,
     "remainDuration": 3000,
-    "remainInterval": 5000
+    "remainInterval": 5000,
+    "deleteStartupAfterFinish": true
   },
   "1432550259170742436": {
     "startup": "https://cdn.discordapp.com/assets/content/873c242b5f499223e727fe16ec292c08085a7fc5a41f98158ababd6ad933fd5e",
     "remain":  "https://cdn.discordapp.com/assets/content/df8a3f944bd0b542b5eab2ef69961f61b462e8bcb75ede94f4cabd4c57e4508e",
     "startupDuration": 3500,
     "remainDuration": 4500,
-    "remainInterval": 6000
+    "remainInterval": 6000,
+    "deleteStartupAfterFinish": false
   }
 }
