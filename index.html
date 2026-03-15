@@ -308,10 +308,10 @@
     const effect = EFFECTS_DB[effectId];
     if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
 
-    const SPECIAL = effectId === "1285465421276905582";
-    const startupDur  = effect.startupDuration || effect.duration || 3000;
-    const remainDur   = effect.remainDuration  || effect.duration || 3000;
-    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms special=${SPECIAL}`);
+    const startupDur = effect.startupDuration || 3000;
+    const remainDur  = effect.remainDuration  || 3000;
+    const interval   = effect.remainInterval  || 5000;
+    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms`);
 
     const makeImg = (src, zIndex) => {
       const img = document.createElement("img");
@@ -320,72 +320,35 @@
       return img;
     };
 
-    // Freeze an APNG by setting animation-duration to its total duration
-    // and animation-iteration-count to 1 via CSS — works without CORS
-    const freezeApng = (img, durationMs) => {
-      img.style.animationDuration       = `${durationMs}ms`;
-      img.style.animationIterationCount = "1";
-      img.style.animationFillMode       = "forwards";
+    // All images go through proxy to patch num_plays=1 (no self-looping)
+    // Cache-bust remain on every play so browser re-fetches and restarts the APNG
+    const proxy      = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
+    const proxyFresh = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}&t=${Date.now()}`;
+
+    // Show startup (plays once, stops)
+    const startImg = makeImg(proxy(effect.startup), 2);
+    effectEl.appendChild(startImg);
+
+    // After startup, cycle remain: play once → wait interval → repeat
+    const playRemain = () => {
+      const remainImg = makeImg(proxyFresh(effect.remain), 3);
+      remainImg.style.opacity = "0";
+      effectEl.appendChild(remainImg);
+      requestAnimationFrame(() => {
+        remainImg.style.transition = "opacity 0.2s";
+        remainImg.style.opacity = "1";
+      });
+      setTimeout(() => {
+        remainImg.style.transition = "opacity 0.2s";
+        remainImg.style.opacity = "0";
+        setTimeout(() => {
+          remainImg.remove();
+          setTimeout(playRemain, interval);
+        }, 200);
+      }, remainDur);
     };
 
-    if (SPECIAL) {
-      const proxyUrl = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
-      const startImg = makeImg(proxyUrl(effect.startup), 2);
-      effectEl.appendChild(startImg);
-      console.log("[effect] special mode: startup proxied (no-loop), remain plays once every interval after 3s delay");
-
-      const interval = effect.remainInterval || 5000;
-
-      const playRemainOnce = () => {
-        const remainImg = makeImg(proxyUrl(effect.remain), 3);
-        remainImg.style.opacity = "0";
-        effectEl.appendChild(remainImg);
-        requestAnimationFrame(() => {
-          remainImg.style.transition = "opacity 0.2s";
-          remainImg.style.opacity = "1";
-        });
-        // After remain finishes playing, fade out, then wait `interval` ms before next play
-        setTimeout(() => {
-          remainImg.style.transition = "opacity 0.2s";
-          remainImg.style.opacity = "0";
-          setTimeout(() => {
-            remainImg.remove();
-            // Wait the interval AFTER removal before playing again
-            setTimeout(playRemainOnce, interval);
-          }, 200);
-        }, remainDur);
-      };
-
-      setTimeout(playRemainOnce, 3000);
-
-    } else {
-      // Normal: proxy both startup and remain so they don't self-loop
-      const proxyUrl = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
-      const interval = effect.remainInterval || 5000;
-
-      const startImg = makeImg(proxyUrl(effect.startup), 2);
-      effectEl.appendChild(startImg);
-
-      const playRemainOnce = () => {
-        const remainImg = makeImg(proxyUrl(effect.remain), 3);
-        remainImg.style.opacity = "0";
-        effectEl.appendChild(remainImg);
-        requestAnimationFrame(() => {
-          remainImg.style.transition = "opacity 0.25s";
-          remainImg.style.opacity = "1";
-        });
-        setTimeout(() => {
-          remainImg.style.transition = "opacity 0.25s";
-          remainImg.style.opacity = "0";
-          setTimeout(() => {
-            remainImg.remove();
-            setTimeout(playRemainOnce, interval);
-          }, 250);
-        }, remainDur);
-      };
-
-      setTimeout(playRemainOnce, startupDur);
-    }
+    setTimeout(playRemain, startupDur);
   }
 
   // ── Badge icon helper ──────────────────────────────────────────────────────
