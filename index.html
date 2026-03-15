@@ -329,11 +329,12 @@
     };
 
     if (SPECIAL) {
-      // Startup: proxied through worker with num_plays=1 so it stops after one cycle
       const proxyUrl = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
       const startImg = makeImg(proxyUrl(effect.startup), 2);
       effectEl.appendChild(startImg);
-      console.log("[effect] special mode: startup proxied (no-loop), remain plays once every 5s after 3s");
+      console.log("[effect] special mode: startup proxied (no-loop), remain plays once every interval after 3s delay");
+
+      const interval = effect.remainInterval || 5000;
 
       const playRemainOnce = () => {
         const remainImg = makeImg(proxyUrl(effect.remain), 3);
@@ -343,32 +344,47 @@
           remainImg.style.transition = "opacity 0.2s";
           remainImg.style.opacity = "1";
         });
+        // After remain finishes playing, fade out, then wait `interval` ms before next play
         setTimeout(() => {
           remainImg.style.transition = "opacity 0.2s";
           remainImg.style.opacity = "0";
-          setTimeout(() => remainImg.remove(), 200);
+          setTimeout(() => {
+            remainImg.remove();
+            // Wait the interval AFTER removal before playing again
+            setTimeout(playRemainOnce, interval);
+          }, 200);
         }, remainDur);
       };
 
-      const interval = effect.remainInterval || 5000;
-      setTimeout(() => {
-        playRemainOnce();
-        setInterval(playRemainOnce, interval);
-      }, 3000);
+      setTimeout(playRemainOnce, 3000);
 
     } else {
-      // Normal: startup plays (looping is fine), remain fades in on top after startupDur
-      const startImg = makeImg(effect.startup, 2);
+      // Normal: proxy both startup and remain so they don't self-loop
+      const proxyUrl = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
+      const interval = effect.remainInterval || 5000;
+
+      const startImg = makeImg(proxyUrl(effect.startup), 2);
       effectEl.appendChild(startImg);
 
-      const remainImg = makeImg(effect.remain, 3);
-      remainImg.style.opacity = "0";
-      effectEl.appendChild(remainImg);
+      const playRemainOnce = () => {
+        const remainImg = makeImg(proxyUrl(effect.remain), 3);
+        remainImg.style.opacity = "0";
+        effectEl.appendChild(remainImg);
+        requestAnimationFrame(() => {
+          remainImg.style.transition = "opacity 0.25s";
+          remainImg.style.opacity = "1";
+        });
+        setTimeout(() => {
+          remainImg.style.transition = "opacity 0.25s";
+          remainImg.style.opacity = "0";
+          setTimeout(() => {
+            remainImg.remove();
+            setTimeout(playRemainOnce, interval);
+          }, 250);
+        }, remainDur);
+      };
 
-      setTimeout(() => {
-        remainImg.style.transition = "opacity 0.25s";
-        remainImg.style.opacity = "1";
-      }, startupDur);
+      setTimeout(playRemainOnce, startupDur);
     }
   }
 
