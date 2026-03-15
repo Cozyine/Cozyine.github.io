@@ -302,76 +302,6 @@
     .then(data => { EFFECTS_DB = data; })
     .catch(e => console.warn("Could not load effects_db.json:", e));
 
-  // ── APNG duration detector using WebWorker-less frame counting ─────────────
-  function detectApngDuration(src) {
-    return new Promise((resolve) => {
-      fetch(src)
-        .then(r => r.arrayBuffer())
-        .then(buf => {
-          const bytes = new Uint8Array(buf);
-          let totalMs = 0;
-          let i = 8;
-          while (i < bytes.length - 12) {
-            const len = (bytes[i]<<24)|(bytes[i+1]<<16)|(bytes[i+2]<<8)|bytes[i+3];
-            const type = String.fromCharCode(bytes[i+4],bytes[i+5],bytes[i+6],bytes[i+7]);
-            if (type === "fcTL") {
-              const base = i + 8;
-              const delayNum = (bytes[base+20]<<8)|bytes[base+21];
-              const delayDen = (bytes[base+22]<<8)|bytes[base+23];
-              const den = delayDen === 0 ? 100 : delayDen;
-              totalMs += (delayNum / den) * 1000;
-            }
-            if (type === "IEND") break;
-            i += 12 + len;
-          }
-          console.log(`[effect] APNG duration for ${src.slice(-16)}: ${totalMs.toFixed(0)}ms`);
-          resolve(totalMs > 0 ? totalMs : null);
-        })
-        .catch(() => resolve(null));
-    });
-  }
-
-  // ── Play APNG on canvas and freeze on last frame ───────────────────────────
-  // Uses a hidden <img> to drive the animation, copies frames to canvas,
-  // then stops copying after `durationMs` — leaving the last drawn frame frozen.
-  function playApngFreezeOnEnd(src, durationMs, zIndex) {
-    const canvas = document.createElement("canvas");
-    canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none;z-index:${zIndex}`;
-    canvas.width  = 450;
-    canvas.height = 880;
-    const ctx = canvas.getContext("2d");
-
-    const img = document.createElement("img");
-    img.crossOrigin = "anonymous";
-    img.src = src;
-    img.style.display = "none";
-    document.body.appendChild(img);
-
-    let stopped = false;
-    let rafId;
-
-    const draw = () => {
-      if (!stopped) {
-        try { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); } catch(e) {}
-        rafId = requestAnimationFrame(draw);
-      }
-    };
-
-    img.onload = () => {
-      draw();
-      setTimeout(() => {
-        stopped = true;
-        cancelAnimationFrame(rafId);
-        // draw one last time to capture final frame
-        try { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); } catch(e) {}
-        img.remove();
-        console.log("[effect] startup frozen on last frame");
-      }, durationMs);
-    };
-
-    return canvas;
-  }
-
   // ── Effect rendering ────────────────────────────────────────────────────────
   async function renderEffect(effectId, effectEl) {
     effectEl.innerHTML = "";
@@ -379,6 +309,9 @@
     if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
 
     const SPECIAL = effectId === "1285465421276905582";
+    const startupDur  = effect.startupDuration || effect.duration || 3000;
+    const remainDur   = effect.remainDuration  || effect.duration || 3000;
+    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms special=${SPECIAL}`);
 
     const makeImg = (src, zIndex) => {
       const img = document.createElement("img");
@@ -387,23 +320,21 @@
       return img;
     };
 
-    // Detect startup duration
-    let startupDuration = effect.duration || null;
-    if (!startupDuration) {
-      console.log("[effect] detecting APNG duration...");
-      startupDuration = await detectApngDuration(effect.startup) || 3000;
-      console.log(`[effect] using startup duration: ${startupDuration.toFixed(0)}ms`);
-    } else {
-      console.log(`[effect] using duration from DB: ${startupDuration}ms`);
-    }
+    // Freeze an APNG by setting animation-duration to its total duration
+    // and animation-iteration-count to 1 via CSS — works without CORS
+    const freezeApng = (img, durationMs) => {
+      img.style.animationDuration       = `${durationMs}ms`;
+      img.style.animationIterationCount = "1";
+      img.style.animationFillMode       = "forwards";
+    };
 
     if (SPECIAL) {
-      // Special: startup plays once and freezes on last frame
-      console.log("[effect] special mode for 1285465421276905582");
-      const startCanvas = playApngFreezeOnEnd(effect.startup, startupDuration, 2);
-      effectEl.appendChild(startCanvas);
+      // Startup: play once and freeze
+      const startImg = makeImg(effect.startup, 2);
+      freezeApng(startImg, startupDur);
+      effectEl.appendChild(startImg);
+      console.log("[effect] special mode: startup frozen, remain plays once every 5s after 3s");
 
-      // After 3s, play remain once every 5s
       const playRemainOnce = () => {
         const remainImg = makeImg(effect.remain, 3);
         remainImg.style.opacity = "0";
@@ -412,15 +343,11 @@
           remainImg.style.transition = "opacity 0.2s";
           remainImg.style.opacity = "1";
         });
-        detectApngDuration(effect.remain).then(dur => {
-          const remainDur = dur || 3000;
-          console.log(`[effect] remain duration: ${remainDur.toFixed(0)}ms`);
-          setTimeout(() => {
-            remainImg.style.transition = "opacity 0.2s";
-            remainImg.style.opacity = "0";
-            setTimeout(() => remainImg.remove(), 200);
-          }, remainDur);
-        });
+        setTimeout(() => {
+          remainImg.style.transition = "opacity 0.2s";
+          remainImg.style.opacity = "0";
+          setTimeout(() => remainImg.remove(), 200);
+        }, remainDur);
       };
 
       setTimeout(() => {
@@ -429,7 +356,7 @@
       }, 3000);
 
     } else {
-      // Normal: startup as img, remain fades in on top after duration
+      // Normal: startup plays (looping is fine), remain fades in on top after startupDur
       const startImg = makeImg(effect.startup, 2);
       effectEl.appendChild(startImg);
 
@@ -440,7 +367,7 @@
       setTimeout(() => {
         remainImg.style.transition = "opacity 0.25s";
         remainImg.style.opacity = "1";
-      }, startupDuration);
+      }, startupDur);
     }
   }
 
