@@ -31,7 +31,7 @@
     "remain":  "https://cdn.discordapp.com/assets/content/714daf4880f0d210b59075841c1a431d5df26922226ecfaf99cc052d29227dc4",
     "startupDuration": 4500,
     "remainDuration": 6000,
-    "remainInterval": 6000,
+    "remainInterval": 3500,
     "deleteStartupAfterFinish": false,
     "discordAutoLoop": false
   },
