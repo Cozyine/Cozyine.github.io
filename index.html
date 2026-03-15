@@ -408,9 +408,11 @@
     }
 
     // Profile effect — look up in local DB by ID
-    const effectId = p.effectId
-      || p.effectUrl?.match(/profile-effects\/(\d+)\//)?.[1]
-      || (p.effectUrl?.match(/^\d+$/) ? p.effectUrl : null);
+    const rawEffect = p.effectUrl ? String(p.effectUrl) : null;
+    const effectId = rawEffect?.match(/profile-effects\/(\d+)\//)?.[1]
+      || rawEffect?.match(/^(\d+)$/)?.[1]
+      || null;
+    console.log("effect raw:", rawEffect, "→ id:", effectId);
     const effectEl = document.getElementById("profileEffect");
     const prevEffectId = effectEl.dataset.effectId;
     if (effectId && effectId !== prevEffectId) {
