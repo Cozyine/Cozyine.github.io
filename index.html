@@ -66,7 +66,7 @@
     .banner-img.loaded { opacity: 1; }
     .profile-effect {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 2; overflow: hidden;
+      pointer-events: none; z-index: 100; overflow: hidden;
       border-radius: var(--r);
     }
 
@@ -327,13 +327,12 @@
     const proxyFresh = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}&t=${Date.now()}`;
 
     if (autoLoop) {
-      // Discord handles looping natively — just show both images directly, no proxy, no timers
-      const startImg = makeImg(effect.startup, 2);
+      const startImg = makeImg(effect.startup, 101);
       effectEl.appendChild(startImg);
       if (deleteStart) {
         setTimeout(() => startImg.remove(), startupDur + 200);
       }
-      const remainImg = makeImg(effect.remain, 3);
+      const remainImg = makeImg(effect.remain, 102);
       remainImg.style.opacity = "0";
       effectEl.appendChild(remainImg);
       setTimeout(() => {
@@ -343,16 +342,14 @@
       return;
     }
 
-    // Show startup via proxy (num_plays=1, no self-loop)
-    const startImg = makeImg(proxy(effect.startup), 2);
+    const startImg = makeImg(proxy(effect.startup), 101);
     effectEl.appendChild(startImg);
     if (deleteStart) {
       setTimeout(() => startImg.remove(), startupDur + 200);
     }
 
-    // After startup, cycle remain: play once → fade out → wait interval → repeat
     const playRemain = () => {
-      const remainImg = makeImg(proxyFresh(effect.remain), 3);
+      const remainImg = makeImg(proxyFresh(effect.remain), 102);
       remainImg.style.opacity = "0";
       effectEl.appendChild(remainImg);
       requestAnimationFrame(() => {
