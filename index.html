@@ -332,10 +332,8 @@
     effectEl.appendChild(startImg);
     if (deleteStart) {
       setTimeout(() => {
-        startImg.style.transition = "opacity 0.2s";
-        startImg.style.opacity = "0";
-        setTimeout(() => startImg.remove(), 200);
-      }, startupDur);
+        startImg.remove();
+      }, startupDur + 200);
     }
 
     // After startup, cycle remain: play once → wait interval → repeat
