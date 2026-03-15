@@ -5,7 +5,8 @@
     "startupDuration": 3000,
     "remainDuration": 3000,
     "remainInterval": 5000,
-    "deleteStartupAfterFinish": false
+    "deleteStartupAfterFinish": false,
+    "discordAutoLoop": false
   },
   "1285465421276905582": {
     "startup": "https://cdn.discordapp.com/assets/content/6daf45b8cfcf8f4c81767ea6ebdfe3105547600dcab6732f6c1544c18dde22a5",
@@ -13,7 +14,8 @@
     "startupDuration": 3000,
     "remainDuration": 3000,
     "remainInterval": 5000,
-    "deleteStartupAfterFinish": true
+    "deleteStartupAfterFinish": true,
+    "discordAutoLoop": false
   },
   "1432550259170742436": {
     "startup": "https://cdn.discordapp.com/assets/content/873c242b5f499223e727fe16ec292c08085a7fc5a41f98158ababd6ad933fd5e",
@@ -21,7 +23,8 @@
     "startupDuration": 3500,
     "remainDuration": 4500,
     "remainInterval": 6000,
-    "deleteStartupAfterFinish": false
+    "deleteStartupAfterFinish": false,
+    "discordAutoLoop": false
   },
   "1343751621254971392": {
     "startup": "https://cdn.discordapp.com/assets/content/f72e99b830a831d64fe735cee954b66393a08edf1fe48cb548dd0b27483ccb7e",
@@ -29,7 +32,8 @@
     "startupDuration": 3000,
     "remainDuration": 3000,
     "remainInterval": 5000,
-    "deleteStartupAfterFinish": false
+    "deleteStartupAfterFinish": false,
+    "discordAutoLoop": false
   },
   "1409898408063406170": {
     "startup": "https://cdn.discordapp.com/assets/content/5231cca365b1d39335d55cabaf0f94c1892d7ccf1af302ebf809c138e2448039",
@@ -37,6 +41,7 @@
     "startupDuration": 3000,
     "remainDuration": 3000,
     "remainInterval": 5000,
-    "deleteStartupAfterFinish": true
+    "deleteStartupAfterFinish": true,
+    "discordAutoLoop": true
   }
 }
