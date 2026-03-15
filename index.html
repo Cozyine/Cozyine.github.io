@@ -302,35 +302,106 @@
     .then(data => { EFFECTS_DB = data; })
     .catch(e => console.warn("Could not load effects_db.json:", e));
 
-  // ── Effect rendering — APNGs displayed as <img>, startup then remain ───────
-  function renderEffect(effectId, effectEl) {
-    effectEl.innerHTML = "";
+  // ── APNG duration detector using WebWorker-less frame counting ─────────────
+  function detectApngDuration(src) {
+    return new Promise((resolve) => {
+      // Fetch the APNG bytes and parse fcTL chunks to sum frame delays
+      fetch(src)
+        .then(r => r.arrayBuffer())
+        .then(buf => {
+          const bytes = new Uint8Array(buf);
+          let totalMs = 0;
+          let i = 8; // skip PNG signature
+          while (i < bytes.length - 12) {
+            const len = (bytes[i]<<24)|(bytes[i+1]<<16)|(bytes[i+2]<<8)|bytes[i+3];
+            const type = String.fromCharCode(bytes[i+4],bytes[i+5],bytes[i+6],bytes[i+7]);
+            if (type === "fcTL") {
+              // delay_num at offset +20, delay_den at offset +22 (relative to chunk start)
+              const base = i + 8;
+              const delayNum = (bytes[base+20]<<8)|bytes[base+21];
+              const delayDen = (bytes[base+22]<<8)|bytes[base+23];
+              const den = delayDen === 0 ? 100 : delayDen;
+              totalMs += (delayNum / den) * 1000;
+            }
+            if (type === "IEND") break;
+            i += 12 + len;
+          }
+          console.log(`[effect] APNG duration for ${src.slice(-16)}: ${totalMs.toFixed(0)}ms`);
+          resolve(totalMs > 0 ? totalMs : null);
+        })
+        .catch(() => resolve(null));
+    });
+  }
 
+  // ── Effect rendering ────────────────────────────────────────────────────────
+  async function renderEffect(effectId, effectEl) {
+    effectEl.innerHTML = "";
     const effect = EFFECTS_DB[effectId];
     if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
 
-    const makeImg = (src) => {
+    const SPECIAL = effectId === "1285465421276905582";
+
+    const makeImg = (src, zIndex) => {
       const img = document.createElement("img");
       img.src = src;
-      img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none;z-index:2";
+      img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none;z-index:${zIndex}`;
       return img;
     };
 
-    // Show startup APNG first
-    const startImg = makeImg(effect.startup);
+    // Detect startup duration from APNG frames (or fall back to DB/default)
+    let startupDuration = effect.duration || null;
+    if (!startupDuration) {
+      console.log("[effect] detecting APNG duration...");
+      startupDuration = await detectApngDuration(effect.startup) || 3000;
+      console.log(`[effect] using startup duration: ${startupDuration.toFixed(0)}ms`);
+    } else {
+      console.log(`[effect] using duration from DB: ${startupDuration}ms`);
+    }
+
+    // Show startup
+    const startImg = makeImg(effect.startup, 2);
     effectEl.appendChild(startImg);
 
-    // After duration, show remain on top — startup stays underneath (last frame visible)
-    const remainImg = makeImg(effect.remain);
-    remainImg.style.opacity = "0";
-    remainImg.style.zIndex = "3";
-    effectEl.appendChild(remainImg);
+    if (SPECIAL) {
+      // Special: wait 3s, then play remain once, then repeat every 5s
+      console.log("[effect] special mode: remain plays once every 5s after 3s delay");
+      const playRemainOnce = () => {
+        const remainImg = makeImg(effect.remain, 3);
+        remainImg.style.opacity = "0";
+        effectEl.appendChild(remainImg);
+        // fade in
+        requestAnimationFrame(() => {
+          remainImg.style.transition = "opacity 0.2s";
+          remainImg.style.opacity = "1";
+        });
+        // detect remain duration then remove it
+        detectApngDuration(effect.remain).then(dur => {
+          const remainDur = dur || 3000;
+          console.log(`[effect] remain duration: ${remainDur.toFixed(0)}ms`);
+          setTimeout(() => {
+            remainImg.style.transition = "opacity 0.2s";
+            remainImg.style.opacity = "0";
+            setTimeout(() => remainImg.remove(), 200);
+          }, remainDur);
+        });
+      };
 
-    const duration = effect.duration || 3000;
-    setTimeout(() => {
-      remainImg.style.transition = "opacity 0.25s";
-      remainImg.style.opacity = "1";
-    }, duration);
+      setTimeout(() => {
+        playRemainOnce();
+        setInterval(playRemainOnce, 5000);
+      }, 3000);
+
+    } else {
+      // Normal: after startup plays, show remain on top permanently
+      const remainImg = makeImg(effect.remain, 3);
+      remainImg.style.opacity = "0";
+      effectEl.appendChild(remainImg);
+
+      setTimeout(() => {
+        remainImg.style.transition = "opacity 0.25s";
+        remainImg.style.opacity = "1";
+      }, startupDuration);
+    }
   }
 
   // ── Badge icon helper ──────────────────────────────────────────────────────
