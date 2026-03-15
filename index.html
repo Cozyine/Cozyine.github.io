@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+<body>
+<div class="orb o1"></div>
+<div class="orb o2"></div>
+
+<div class="card" id="card">
+  <div class="banner" id="banner">
+    <div class="banner-grid"></div>
+    <div class="banner-img" id="bannerImg"></div>
+    <div class="profile-effect" id="profileEffect"></div>
+  </div>
+  <div class="av-row">
+    <div class="av-ring">
+      <div class="av-fallback" id="avatarEl">…</div>
+      <div class="av-status" title="Online"></div>
+    </div>
+    <div class="top-badges">
+      <span class="chip hi">⚡ Discord</span>
+      <span class="chip" id="chipExtra">Loading</span>
+    </div>
+  </div>
+  <div class="body" id="cardBody">
+    <div id="skeleton">
+      <div class="skeleton sk-name"></div>
+      <div class="skeleton sk-handle"></div>
+      <div class="skeleton sk-pill"></div>
+    </div>
+    <div class="rule" style="opacity:0" id="r1"></div>
+    <div id="nameplateSection"></div>
+    <div id="bioSection" style="opacity:0">
+      <div class="lbl">About Me</div>
+      <div class="skeleton sk-bio" id="bioSkeleton"></div>
+    </div>
+    <div class="rule" style="opacity:0" id="r2"></div>
+    <div id="activitySection" style="opacity:0"></div>
+    <div class="rule" style="opacity:0" id="r3"></div>
+    <div id="idSection" style="opacity:0">
+      <div class="id-block" onclick="copyId()">
+        <div>
+          <div class="id-lbl">Discord ID</div>
+          <div class="id-val" id="idVal">1331780207979401289</div>
+        </div>
+        <div class="copy-btn" id="copyLbl">Copy</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toggle-wrap">
+  <button class="toggle-btn" onclick="toggleTheme()">
+    <span class="t-icon" id="tIcon">🌙</span>
+    <div class="t-track"><div class="t-thumb"></div></div>
+    <span id="tLabel">Light mode</span>
+  </button>
+</div>
+
+<div class="effect-wrap">
+  <div class="effect-slider-box">
+    <label class="effect-slider-label" for="effectSlider">Effect <span id="effectSliderVal">100</span>%</label>
+    <input class="effect-slider" type="range" id="effectSlider" min="0" max="100" value="100"
+      oninput="setEffectOpacity(this.value)">
+  </div>
+</div>
+
+<script>
+  const API = "https://soft-forest-a8c2.cozyine.workers.dev";
+  const STATUS_LABEL = { online:"Online", idle:"Idle", dnd:"Do Not Disturb", offline:"Offline" };
+  const root = document.documentElement;
+  let dark = localStorage.getItem("theme") !== "light";
+  applyTheme();
+
+  function toggleTheme() { dark=!dark; localStorage.setItem("theme",dark?"dark":"light"); applyTheme(); }
+  function applyTheme() {
+    root.setAttribute("data-theme", dark?"dark":"light");
+    document.getElementById("tIcon").textContent  = dark?"🌙":"☀️";
+    document.getElementById("tLabel").textContent = dark?"Light mode":"Dark mode";
+  }
+
+  function setEffectOpacity(val) {
+    document.getElementById("effectSliderVal").textContent = val;
+    const el = document.getElementById("profileEffect");
+    if (el) el.style.opacity = val / 100;
+    localStorage.setItem("effectOpacity", val);
+  }
+  // Restore saved opacity on load
+  (function() {
+    const saved = localStorage.getItem("effectOpacity");
+    if (saved !== null) {
+      const slider = document.getElementById("effectSlider");
+      if (slider) { slider.value = saved; setEffectOpacity(saved); }
+    }
+  })();
+
+  function copyId() {
+    navigator.clipboard.writeText(document.getElementById("idVal").textContent).then(() => {
+      const btn = document.getElementById("copyLbl");
+      btn.textContent="Copied!"; btn.classList.add("ok");
+      setTimeout(()=>{btn.textContent="Copy";btn.classList.remove("ok")},2000);
+    });
+  }
+
+  async function loadProfile() {
+    try {
+      const res = await fetch(`${API}/all`);
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      renderProfile(await res.json());
+    } catch(err) { renderError(err.message); }
+  }
+
+  function renderProfile(p) {
+    const status   = p.status   || "offline";
+    const activity = p.activity || null;
+
+    // Avatar
+    const avEl = document.getElementById("avatarEl");
+    if (avEl) {
+      const img = document.createElement("img");
+      img.className = "av-img"; img.alt = "avatar";
+      img.onerror = () => {
+        const fb = document.createElement("div");
+        fb.className = "av-fallback";
+        fb.textContent = (p.displayName[0]||"?").toUpperCase();
+        img.replaceWith(fb);
+      };
+      img.src = p.avatarUrl;
+      avEl.replaceWith(img);
+    }
+
+    // Avatar decoration
+    if (p.decorationUrl) {
+      const ring = document.querySelector(".av-ring");
+      if (ring) {
+        const ex = ring.querySelector(".av-decoration");
+        if (ex) ex.remove();
+        const dec = document.createElement("img");
+        dec.className = "av-decoration"; dec.src = p.decorationUrl; dec.alt = "";
+        ring.appendChild(dec);
+      }
+    }
+
+    // Status dot
+    const dot = document.querySelector(".av-status");
+    dot.className = `av-status ${status}`;
+    dot.title = STATUS_LABEL[status]||status;
+
+    // Banner — solid accent color (no gradient), or banner image
+    if (p.bannerUrl) {
+      const bi = document.getElementById("bannerImg");
+      bi.style.backgroundImage = `url(${p.bannerUrl})`;
+      bi.classList.add("loaded");
+    } else if (p.accentColor) {
+      document.getElementById("banner").style.background = p.accentColor;
+    }
+
+    // Profile effect — proxied through worker to bypass CORS
+    if (p.effectUrl) {
+      const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
+      if (effectId) {
+        const effectEl = document.getElementById("profileEffect");
+        effectEl.innerHTML = "";
+        lottie.loadAnimation({
+          container: effectEl, renderer: "svg", loop: true, autoplay: true,
+          path: `${API}/proxy-effect?id=${effectId}`,
+        });
+      }
+    }
+
+    // Chips
+    document.getElementById("chipExtra").textContent =
+      p.badges.length ? `🏅 ${p.badges[0].label||"Badge"}` : "Member";
+
+    // Clan tag HTML
+    const clanHtml = p.clanTag
+      ? ` <span class="clan-tag">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
+      : "";
+
+    // Name / handle / status pill
+    document.getElementById("skeleton").innerHTML = `
+      <div>
+        <div class="dname">${escHtml(p.displayName)}${clanHtml}</div>
+        <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns?` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>`:""}</div>
+        <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status]||status)}</div>
+      </div>`;
+
+    // Nameplate bar
+    const npSec = document.getElementById("nameplateSection");
+    if (p.nameplateAnimatedUrl || p.nameplateUrl) {
+      const bgEl = p.nameplateAnimatedUrl
+        ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
+        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
+      const accentDark = p.accentColor ? p.accentColor+"cc" : "rgba(0,0,0,.8)";
+      const npClan = p.clanTag
+        ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
+        : "";
+      const actIcon = activity?.largeImage ? `<img src="${escHtml(activity.largeImage)}" alt="">` : "🎮";
+      const npAct = activity?.name
+        ? `<span class="np-activity">${actIcon} ${escHtml(activity.name)}</span>` : "";
+      npSec.innerHTML = `
+        <div class="nameplate-bar">
+          ${bgEl}
+          <div class="np-overlay" style="--np-accent:${accentDark}"></div>
+          <div class="np-content">
+            <div class="np-row1">
+              <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
+              <span class="np-name">${escHtml(p.displayName)}</span>
+              ${npClan}
+            </div>
+            ${npAct ? `<div class="np-row2">${npAct}</div>` : ""}
+          </div>
+        </div>`;
+    } else {
+      npSec.innerHTML = "";
+    }
+
+    // Bio + badges
+    const bioSec = document.getElementById("bioSection");
+    bioSec.innerHTML = `
+      <div class="lbl">About Me</div>
+      ${p.bio
+        ? `<p class="bio-text" style="white-space:pre-line">${escHtml(p.bio)}</p>`
+        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
+      ${p.badges?.length ? `
+        <div class="badges" style="margin-top:12px">
+          ${p.badges.map(b=>{
+            const inner = b.iconUrl
+              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
+              : `🏅 ${escHtml(b.label)}`;
+            return b.link
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
+              : `<span class="badge">${inner}</span>`;
+          }).join("")}
+        </div>` : ""}`;
+    bioSec.style.opacity = "1";
+
+    // Activity
+    const actSec = document.getElementById("activitySection");
+    if (activity) {
+      const typeIcon = {spotify:"🎵",playing:"🎮",streaming:"📡",watching:"📺",competing:"🏆",custom:"✨"}[activity.type]||"💻";
+      const elapsed = activity.start ? formatElapsed(activity.start) : null;
+      actSec.innerHTML = `
+        <div class="lbl">Current Activity</div>
+        <div class="activity-card">
+          <div class="activity-icon">
+            ${activity.largeImage
+              ? `<img class="large" src="${escHtml(activity.largeImage)}" alt="activity">${activity.smallImage?`<img class="small" src="${escHtml(activity.smallImage)}" alt="" title="${escHtml(activity.smallText||'')}">`:""}`
+              : typeIcon}
+          </div>
+          <div style="min-width:0;flex:1">
+            <div class="activity-name">${escHtml(activity.name)}</div>
+            ${activity.details?`<div class="activity-detail">${escHtml(activity.details)}</div>`:""}
+            ${activity.state?`<div class="activity-detail">${escHtml(activity.state)}</div>`:""}
+            ${elapsed?`<div class="activity-detail" id="actElapsed">${elapsed}</div>`:""}
+            ${activity.buttons?.filter(b=>b.url).length?`
+              <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                ${activity.buttons.filter(b=>b.url).map(b=>`<a href="${escHtml(b.url)}" target="_blank" rel="noopener" class="act-btn">${escHtml(b.label)}</a>`).join("")}
+              </div>`:""}
+          </div>
+        </div>`;
+      actSec.style.opacity = "1";
+      document.getElementById("r2").style.opacity = "1";
+      document.getElementById("r3").style.opacity = "1";
+      if (activity.start) {
+        clearInterval(window._elapsedTimer);
+        window._elapsedTimer = setInterval(()=>{
+          const el = document.getElementById("actElapsed");
+          if (el) el.textContent = formatElapsed(activity.start);
+        }, 1000);
+      }
+    } else {
+      actSec.innerHTML = ""; actSec.style.opacity = "0";
+      document.getElementById("r2").style.opacity = "0";
+      document.getElementById("r3").style.opacity = "1";
+      clearInterval(window._elapsedTimer);
+    }
+
+    document.getElementById("idVal").textContent = p.id;
+    document.getElementById("r1").style.opacity  = "1";
+    document.getElementById("idSection").style.opacity = "1";
+  }
+
+  function renderError(msg) {
+    document.getElementById("skeleton").innerHTML = `
+      <div class="error-box">⚠️ Couldn't load profile.<br>
+      <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span></div>`;
+    document.getElementById("chipExtra").textContent = "Offline";
+    document.getElementById("r2").style.opacity = "1";
+    document.getElementById("idSection").style.opacity = "1";
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+  function formatElapsed(startMs) {
+    const diff=Math.floor((Date.now()-startMs)/1000);
+    const h=Math.floor(diff/3600),m=Math.floor((diff%3600)/60),s=diff%60;
+    const pad=n=>String(n).padStart(2,"0");
+    return h>0?`${pad(h)}:${pad(m)}:${pad(s)} elapsed`:`${pad(m)}:${pad(s)} elapsed`;
+  }
+
+  loadProfile();
+</script>
+</body>
+</html>
