@@ -312,7 +312,7 @@
     const makeImg = (src) => {
       const img = document.createElement("img");
       img.src = src;
-      img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;z-index:100";
+      img.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none;z-index:2";
       return img;
     };
 
@@ -325,10 +325,20 @@
     remainImg.style.opacity = "0";
     effectEl.appendChild(remainImg);
 
-    // APNGs don't fire 'ended' — use duration from DB, default 3s
+    // When startup duration ends: freeze it on last frame via canvas, then fade in remain
     const duration = effect.duration || 3000;
     setTimeout(() => {
-      startImg.remove();
+      // Snapshot current frame of startup into a canvas (freezes the APNG)
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width  = startImg.naturalWidth  || 450;
+        canvas.height = startImg.naturalHeight || 880;
+        canvas.style.cssText = startImg.style.cssText;
+        canvas.getContext("2d").drawImage(startImg, 0, 0);
+        startImg.replaceWith(canvas);
+      } catch(e) {
+        // Cross-origin fallback — just leave startup visible behind remain
+      }
       remainImg.style.opacity = "1";
     }, duration + 250);
   }
