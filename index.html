@@ -350,9 +350,10 @@
         }, remainDur);
       };
 
+      const interval = effect.remainInterval || 5000;
       setTimeout(() => {
         playRemainOnce();
-        setInterval(playRemainOnce, 5000);
+        setInterval(playRemainOnce, interval);
       }, 3000);
 
     } else {
