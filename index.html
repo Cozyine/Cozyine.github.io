@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
 <div class="orb o1"></div>
@@ -72,7 +71,29 @@
   </div>
 </div>
 
+<div class="effect-wrap">
+  <div class="effect-slider-box">
+    <label class="effect-slider-label" for="effectSlider">Effect <span id="effectSliderVal">100</span>%</label>
+    <input class="effect-slider" type="range" id="effectSlider" min="0" max="100" value="100"
+      oninput="setEffectOpacity(this.value)">
+  </div>
+</div>
+
 <script>
+  function setEffectOpacity(val) {
+    document.getElementById("effectSliderVal").textContent = val;
+    const el = document.getElementById("profileEffect");
+    if (el) el.style.opacity = val / 100;
+    localStorage.setItem("effectOpacity", val);
+  }
+  (function() {
+    const saved = localStorage.getItem("effectOpacity");
+    if (saved !== null) {
+      const slider = document.getElementById("effectSlider");
+      if (slider) { slider.value = saved; setEffectOpacity(saved); }
+    }
+  })();
+
   const API = "https://soft-forest-a8c2.cozyine.workers.dev";
   const STATUS_LABEL = { online:"Online", idle:"Idle", dnd:"Do Not Disturb", offline:"Offline" };
   const root = document.documentElement;
@@ -162,22 +183,7 @@
       document.getElementById("banner").style.background = p.accentColor;
     }
 
-    // Profile effect — proxied through worker to bypass CORS
-    if (p.effectUrl) {
-      const effectId = p.effectUrl.match(/profile-effects\/(\d+)\//)?.[1];
-      if (effectId) {
-        const effectEl = document.getElementById("profileEffect");
-        effectEl.innerHTML = "";
-        lottie.loadAnimation({
-          container: effectEl, renderer: "svg", loop: true, autoplay: true,
-          path: `${API}/proxy-effect?id=${effectId}`,
-        });
-      }
-    }
 
-    // Chips
-    document.getElementById("chipExtra").textContent =
-      p.badges.length ? `🏅 ${p.badges[0].label||"Badge"}` : "Member";
 
     // Clan tag HTML
     const clanHtml = p.clanTag
