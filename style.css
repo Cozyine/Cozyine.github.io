@@ -1,4 +1,4 @@
-:root {
+    :root {
       --ease: cubic-bezier(.22,1,.36,1);
       --accent: #5865f2; --accent-glow: rgba(88,101,242,.3);
       --pink: #eb459e; --green: #3ba55d; --r: 22px; --rsm: 12px;
@@ -127,14 +127,14 @@
 
     .nameplate-bar {
       position:relative; width:100%; height:52px; border-radius:12px;
-      overflow:hidden; margin-bottom:14px; background:#111214;
+      overflow:hidden; margin-bottom:14px; background:transparent;
     }
     .nameplate-bar > video, .nameplate-bar > img.np-bg {
       position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;
     }
     .np-overlay {
       position:absolute; inset:0; z-index:0;
-      background: linear-gradient(to right, var(--np-left, rgba(0,0,0,.45)) 0%, transparent 40%);
+      background: linear-gradient(to right, rgba(0,0,0,.4) 0%, transparent 35%);
     }
     .np-content {
       position:absolute; inset:0; z-index:1; display:flex; flex-direction:column;
