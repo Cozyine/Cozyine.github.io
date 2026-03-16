@@ -13,15 +13,19 @@
 <div class="orb o2"></div>
 
 <div class="card" id="card">
-  <div class="profile-effect" id="profileEffect"></div>
   <div class="banner" id="banner">
     <div class="banner-grid"></div>
     <div class="banner-img" id="bannerImg"></div>
+    <div class="profile-effect" id="profileEffect"></div>
   </div>
   <div class="av-row">
     <div class="av-ring">
       <div class="av-fallback" id="avatarEl">…</div>
       <div class="av-status" title="Online"></div>
+    </div>
+    <div class="top-badges">
+      <span class="chip hi">⚡ Discord</span>
+      <span class="chip" id="chipExtra">Loading</span>
     </div>
   </div>
   <div class="body" id="cardBody">
@@ -67,7 +71,29 @@
   </div>
 </div>
 
+<div class="effect-wrap">
+  <div class="effect-slider-box">
+    <label class="effect-slider-label" for="effectSlider">Effect <span id="effectSliderVal">100</span>%</label>
+    <input class="effect-slider" type="range" id="effectSlider" min="0" max="100" value="100"
+      oninput="setEffectOpacity(this.value)">
+  </div>
+</div>
+
 <script>
+  function setEffectOpacity(val) {
+    document.getElementById("effectSliderVal").textContent = val;
+    const el = document.getElementById("profileEffect");
+    if (el) el.style.opacity = val / 100;
+    localStorage.setItem("effectOpacity", val);
+  }
+  (function() {
+    const saved = localStorage.getItem("effectOpacity");
+    if (saved !== null) {
+      const slider = document.getElementById("effectSlider");
+      if (slider) { slider.value = saved; setEffectOpacity(saved); }
+    }
+  })();
+
   const API = "https://soft-forest-a8c2.cozyine.workers.dev";
   const STATUS_LABEL = { online:"Online", idle:"Idle", dnd:"Do Not Disturb", offline:"Offline" };
   const root = document.documentElement;
@@ -87,6 +113,7 @@
     if (el) el.style.opacity = val / 100;
     localStorage.setItem("effectOpacity", val);
   }
+  // Restore saved opacity on load
   (function() {
     const saved = localStorage.getItem("effectOpacity");
     if (saved !== null) {
@@ -101,75 +128,6 @@
       btn.textContent="Copied!"; btn.classList.add("ok");
       setTimeout(()=>{btn.textContent="Copy";btn.classList.remove("ok")},2000);
     });
-  }
-
-  // ── Effects DB ─────────────────────────────────────────────────────────────
-  let EFFECTS_DB = {};
-  const effectsDbReady = fetch("effects_db.json")
-    .then(r => r.json())
-    .then(data => { EFFECTS_DB = data; })
-    .catch(e => console.warn("Could not load effects_db.json:", e));
-
-  // ── Effect rendering ────────────────────────────────────────────────────────
-  async function renderEffect(effectId, effectEl) {
-    effectEl.innerHTML = "";
-    const effect = EFFECTS_DB[effectId];
-    if (!effect) { console.warn("Unknown effect ID:", effectId); return; }
-
-    const startupDur  = effect.startupDuration || 3000;
-    const remainDur   = effect.remainDuration  || 3000;
-    const interval    = effect.remainInterval  || 5000;
-    const deleteStart = effect.deleteStartupAfterFinish === true;
-    const autoLoop    = effect.discordAutoLoop === true;
-    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms autoLoop=${autoLoop}`);
-
-    const makeImg = (src, zIndex) => {
-      const img = document.createElement("img");
-      img.src = src;
-      img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;pointer-events:none;z-index:${zIndex}`;
-      return img;
-    };
-
-    const proxy      = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}`;
-    const proxyFresh = (src) => `${API}/proxy-apng?src=${encodeURIComponent(src)}&t=${Date.now()}`;
-
-    if (autoLoop) {
-      const startImg = makeImg(effect.startup, 101);
-      effectEl.appendChild(startImg);
-      if (deleteStart) setTimeout(() => startImg.remove(), startupDur + 200);
-      const remainImg = makeImg(effect.remain, 102);
-      remainImg.style.opacity = "0";
-      effectEl.appendChild(remainImg);
-      setTimeout(() => {
-        remainImg.style.transition = "opacity 0.2s";
-        remainImg.style.opacity = "1";
-      }, startupDur);
-      return;
-    }
-
-    const startImg = makeImg(proxy(effect.startup), 101);
-    effectEl.appendChild(startImg);
-    if (deleteStart) setTimeout(() => startImg.remove(), startupDur + 200);
-
-    const playRemain = () => {
-      const remainImg = makeImg(proxyFresh(effect.remain), 102);
-      remainImg.style.opacity = "0";
-      effectEl.appendChild(remainImg);
-      requestAnimationFrame(() => {
-        remainImg.style.transition = "opacity 0.2s";
-        remainImg.style.opacity = "1";
-      });
-      setTimeout(() => {
-        remainImg.style.transition = "opacity 0.2s";
-        remainImg.style.opacity = "0";
-        setTimeout(() => {
-          remainImg.remove();
-          setTimeout(playRemain, interval);
-        }, 200);
-      }, remainDur);
-    };
-
-    setTimeout(playRemain, startupDur);
   }
 
   async function loadProfile() {
@@ -196,24 +154,22 @@
         img.replaceWith(fb);
       };
       img.src = p.avatarUrl;
+      img.draggable = false;
+      img.addEventListener("contextmenu", e => e.preventDefault());
+      img.addEventListener("dragstart", e => e.preventDefault());
       avEl.replaceWith(img);
-    } else {
-      const existing = document.querySelector(".av-img");
-      if (existing && existing.src !== p.avatarUrl) existing.src = p.avatarUrl;
     }
 
     // Avatar decoration
-    const ring = document.querySelector(".av-ring");
-    if (ring) {
-      const ex = ring.querySelector(".av-decoration");
-      if (p.decorationUrl) {
-        if (ex) { ex.src = p.decorationUrl; }
-        else {
-          const dec = document.createElement("img");
-          dec.className = "av-decoration"; dec.src = p.decorationUrl; dec.alt = "";
-          ring.appendChild(dec);
-        }
-      } else if (ex) { ex.remove(); }
+    if (p.decorationUrl) {
+      const ring = document.querySelector(".av-ring");
+      if (ring) {
+        const ex = ring.querySelector(".av-decoration");
+        if (ex) ex.remove();
+        const dec = document.createElement("img");
+        dec.className = "av-decoration"; dec.src = p.decorationUrl; dec.alt = "";
+        ring.appendChild(dec);
+      }
     }
 
     // Status dot
@@ -221,7 +177,7 @@
     dot.className = `av-status ${status}`;
     dot.title = STATUS_LABEL[status]||status;
 
-    // Banner
+    // Banner — solid accent color (no gradient), or banner image
     if (p.bannerUrl) {
       const bi = document.getElementById("bannerImg");
       bi.style.backgroundImage = `url(${p.bannerUrl})`;
@@ -230,37 +186,19 @@
       document.getElementById("banner").style.background = p.accentColor;
     }
 
-    // Profile effect
-    const rawEffect = p.effectUrl ? String(p.effectUrl) : null;
-    const effectId = rawEffect?.match(/profile-effects\/(\d+)\//)?.[1]
-      || rawEffect?.match(/^(\d+)$/)?.[1]
-      || null;
-    const effectEl = document.getElementById("profileEffect");
-    const prevEffectId = effectEl.dataset.effectId;
-    if (effectId && effectId !== prevEffectId) {
-      effectEl.dataset.effectId = effectId;
-      renderEffect(effectId, effectEl);
-    }
 
-    // Clan tag
+
+    // Clan tag HTML
     const clanHtml = p.clanTag
       ? ` <span class="clan-tag">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
       : "";
 
-    // Inline badge icons
-    const badgeIconsHtml = p.badges?.length
-      ? `<div class="badge-icons">${p.badges.map(b => b.iconUrl
-          ? `<img src="${escHtml(b.iconUrl)}" title="${escHtml(b.label||'')}" alt="${escHtml(b.label||'')}" onerror="this.style.display='none'">`
-          : "").filter(Boolean).join("")}</div>`
-      : "";
-
-    // Name / handle / status pill / badges
+    // Name / handle / status pill
     document.getElementById("skeleton").innerHTML = `
       <div>
         <div class="dname">${escHtml(p.displayName)}${clanHtml}</div>
         <div class="handle">@<em>${escHtml(p.username)}</em>${p.pronouns?` · <span style="color:var(--text3);font-size:12px">${escHtml(p.pronouns)}</span>`:""}</div>
         <div class="online-pill ${status}"><span class="odot ${status}"></span>${escHtml(STATUS_LABEL[status]||status)}</div>
-        ${badgeIconsHtml}
       </div>`;
 
     // Nameplate bar
@@ -269,7 +207,7 @@
       const bgEl = p.nameplateAnimatedUrl
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-      const accentDark = p.accentColor ? p.accentColor + "80" : "rgba(0,0,0,.5)";
+      const accentDark = p.accentColor ? p.accentColor+"cc" : "rgba(0,0,0,.8)";
       const npClan = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
         : "";
@@ -293,13 +231,24 @@
       npSec.innerHTML = "";
     }
 
-    // Bio
+    // Bio + badges
     const bioSec = document.getElementById("bioSection");
     bioSec.innerHTML = `
       <div class="lbl">About Me</div>
       ${p.bio
         ? `<p class="bio-text" style="white-space:pre-line">${escHtml(p.bio)}</p>`
-        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}`;
+        : `<p class="no-bio">This user prefers to keep an air of mystery.</p>`}
+      ${p.badges?.length ? `
+        <div class="badges" style="margin-top:12px">
+          ${p.badges.map(b=>{
+            const inner = b.iconUrl
+              ? `<img src="${escHtml(b.iconUrl)}" style="width:14px;height:14px;vertical-align:middle;margin-right:4px"> ${escHtml(b.label)}`
+              : `🏅 ${escHtml(b.label)}`;
+            return b.link
+              ? `<a href="${escHtml(b.link)}" target="_blank" rel="noopener" class="badge" style="text-decoration:none">${inner}</a>`
+              : `<span class="badge">${inner}</span>`;
+          }).join("")}
+        </div>` : ""}`;
     bioSec.style.opacity = "1";
 
     // Activity
@@ -352,6 +301,7 @@
     document.getElementById("skeleton").innerHTML = `
       <div class="error-box">⚠️ Couldn't load profile.<br>
       <span style="font-size:12px;opacity:.8">${escHtml(msg)}</span></div>`;
+    document.getElementById("chipExtra").textContent = "Offline";
     document.getElementById("r2").style.opacity = "1";
     document.getElementById("idSection").style.opacity = "1";
   }
@@ -366,10 +316,7 @@
     return h>0?`${pad(h)}:${pad(m)}:${pad(s)} elapsed`:`${pad(m)}:${pad(s)} elapsed`;
   }
 
-  effectsDbReady.then(() => {
-    loadProfile();
-    setInterval(loadProfile, 60_000);
-  });
+  loadProfile();
 </script>
 </body>
 </html>
