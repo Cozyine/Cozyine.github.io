@@ -126,7 +126,7 @@
     .clan-tag img { width:14px; height:14px; border-radius:3px; object-fit:cover; }
 
     .nameplate-bar {
-      position:relative; width:100%; height:64px; border-radius:12px;
+      position:relative; width:100%; height:48px; border-radius:12px;
       overflow:hidden; margin-bottom:14px; background:transparent;
     }
     .nameplate-bar > video, .nameplate-bar > img.np-bg {
@@ -136,24 +136,24 @@
       position:absolute; inset:0; z-index:1;
       background: linear-gradient(to right,
         var(--card) 0%,
-        transparent 16%
+        transparent 8%
       );
     }
     .np-content {
       position:absolute; inset:0; z-index:2; display:flex; flex-direction:column;
       justify-content:center; padding:0 14px; gap:4px;
     }
-    .np-row1 { display:flex; align-items:center; gap:7px; min-width:0; }
-    .np-avatar { width:26px; height:26px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1.5px solid rgba(255,255,255,.5); }
-    .np-name { font-size:14.5px; font-weight:700; color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.95); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .np-row1 { display:flex; align-items:center; gap:6px; min-width:0; }
+    .np-avatar { width:22px; height:22px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1.5px solid rgba(255,255,255,.5); }
+    .np-name { font-size:13px; font-weight:700; color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.95); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .np-clan {
-      display:inline-flex; align-items:center; gap:3px; font-size:11px; font-weight:700;
-      padding:1px 7px 1px 5px; border-radius:5px; background:rgba(0,0,0,.5);
+      display:inline-flex; align-items:center; gap:3px; font-size:10.5px; font-weight:700;
+      padding:1px 6px 1px 4px; border-radius:5px; background:rgba(0,0,0,.5);
       backdrop-filter:blur(4px); color:#fff; white-space:nowrap; flex-shrink:0;
     }
-    .np-clan img { width:14px; height:14px; border-radius:3px; object-fit:cover; }
-    /* 26px avatar + 7px gap = 33px indent for activity row */
-    .np-row2 { display:flex; align-items:center; gap:5px; padding-left:33px; min-width:0; }
+    .np-clan img { width:13px; height:13px; border-radius:3px; object-fit:cover; }
+    /* 22px avatar + 6px gap = 28px indent */
+    .np-row2 { display:flex; align-items:center; gap:5px; padding-left:28px; min-width:0; }
     .np-activity {
       display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:500;
       color:rgba(255,255,255,.85); white-space:nowrap; text-shadow:0 1px 4px rgba(0,0,0,.95);
