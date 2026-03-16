@@ -1,4 +1,4 @@
-    :root {
+:root {
       --ease: cubic-bezier(.22,1,.36,1);
       --accent: #5865f2; --accent-glow: rgba(88,101,242,.3);
       --pink: #eb459e; --green: #3ba55d; --r: 22px; --rsm: 12px;
@@ -134,7 +134,7 @@
     }
     .np-overlay {
       position:absolute; inset:0; z-index:0;
-      background: linear-gradient(to right, var(--np-left, rgba(0,0,0,.55)) 0%, rgba(0,0,0,.2) 50%, transparent 80%);
+      background: linear-gradient(to right, var(--np-left, rgba(0,0,0,.45)) 0%, transparent 40%);
     }
     .np-content {
       position:absolute; inset:0; z-index:1; display:flex; flex-direction:column;
