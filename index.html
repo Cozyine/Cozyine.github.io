@@ -477,12 +477,12 @@
     b = Math.round(b / count);
     
     console.log('[extractNameplateColor] Extracted RGB:', r, g, b);
-    
-    // Darken by 70%
-    r = Math.floor(r * 0.8);
-    g = Math.floor(g * 0.8);
-    b = Math.floor(b * 0.8);
-    
+
+    // Keep 30% brightness (70% darker)
+    r = Math.floor(r * 0.3);
+    g = Math.floor(g * 0.3);
+    b = Math.floor(b * 0.3);
+
     console.log('[extractNameplateColor] Darkened RGB:', r, g, b);
     
     const nameplateBar = document.getElementById('nameplateBar');
@@ -574,10 +574,10 @@
     
     console.log('[extractColorFromVideo] Extracted RGB:', r, g, b);
 
-    // Darken by 30% (keep 70% of original brightness)
-    r = Math.floor(r * 0.7);
-    g = Math.floor(g * 0.7);
-    b = Math.floor(b * 0.7);
+    // Keep 30% brightness (70% darker)
+    r = Math.floor(r * 0.3);
+    g = Math.floor(g * 0.3);
+    b = Math.floor(b * 0.3);
 
     console.log('[extractColorFromVideo] Darkened RGB:', r, g, b);
     
