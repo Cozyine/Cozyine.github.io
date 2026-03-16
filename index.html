@@ -121,6 +121,7 @@
     const interval    = effect.remainInterval  || 5000;
     const deleteStart = effect.deleteStartupAfterFinish === true;
     const autoLoop    = effect.discordAutoLoop === true;
+    console.log(`[effect] id=${effectId} startupDur=${startupDur}ms remainDur=${remainDur}ms interval=${interval}ms autoLoop=${autoLoop}`);
 
     const makeImg = (src, zIndex) => {
       const img = document.createElement("img");
@@ -188,9 +189,6 @@
     if (avEl) {
       const img = document.createElement("img");
       img.className = "av-img"; img.alt = "avatar";
-      img.draggable = false;
-      img.addEventListener("contextmenu", e => e.preventDefault());
-      img.addEventListener("dragstart", e => e.preventDefault());
       img.onerror = () => {
         const fb = document.createElement("div");
         fb.className = "av-fallback";
@@ -249,7 +247,7 @@
       ? ` <span class="clan-tag">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
       : "";
 
-    // Inline badge icons only
+    // Inline badge icons
     const badgeIconsHtml = p.badges?.length
       ? `<div class="badge-icons">${p.badges.map(b => b.iconUrl
           ? `<img src="${escHtml(b.iconUrl)}" title="${escHtml(b.label||'')}" alt="${escHtml(b.label||'')}" onerror="this.style.display='none'">`
@@ -265,22 +263,82 @@
         ${badgeIconsHtml}
       </div>`;
 
-    // Nameplate bar — 75% dark overlay
+    // Nameplate bar
     const npSec = document.getElementById("nameplateSection");
+    console.log('[renderProfile] Nameplate data:', { 
+      nameplateAnimatedUrl: p.nameplateAnimatedUrl, 
+      nameplateUrl: p.nameplateUrl,
+      accentColor: p.accentColor 
+    });
+    
+    const npClan = p.clanTag
+      ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
+      : "";
+    const actIcon = activity?.largeImage ? `<img src="${escHtml(activity.largeImage)}" alt="">` : "🎮";
+    const npAct = activity?.name
+      ? `<span class="np-activity">${actIcon} ${escHtml(activity.name)}</span>` : "";
+
     if (p.nameplateAnimatedUrl || p.nameplateUrl) {
-      const bgEl = p.nameplateAnimatedUrl
-        ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
-        : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-      const npClan = p.clanTag
-        ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
-        : "";
-      const actIcon = activity?.largeImage ? `<img src="${escHtml(activity.largeImage)}" alt="">` : "🎮";
-      const npAct = activity?.name
-        ? `<span class="np-activity">${actIcon} ${escHtml(activity.name)}</span>` : "";
+      const isVideo = !!p.nameplateAnimatedUrl;
+      const accentDark = p.accentColor ? p.accentColor + "80" : "rgba(0,0,0,.5)";
+      const npUrl = isVideo ? p.nameplateAnimatedUrl : p.nameplateUrl;
+      const proxiedNpUrl = `${API}/proxy-apng?src=${encodeURIComponent(npUrl)}`;
+      
       npSec.innerHTML = `
-        <div class="nameplate-bar">
-          ${bgEl}
-          <div class="np-overlay"></div>
+        <div class="nameplate-bar" id="nameplateBar">
+          ${isVideo
+            ? `<video autoplay loop muted playsinline crossorigin="anonymous"><source src="${escHtml(proxiedNpUrl)}" type="video/webm"></video>`
+            : `<img class="np-bg" src="${escHtml(proxiedNpUrl)}" alt="" crossorigin="anonymous">`}
+          <div class="np-overlay" style="--np-accent:${accentDark}"></div>
+          <div class="np-content">
+            <div class="np-row1">
+              <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
+              <span class="np-name">${escHtml(p.displayName)}</span>
+              ${npClan}
+            </div>
+            ${npAct ? `<div class="np-row2">${npAct}</div>` : ""}
+          </div>
+        </div>`;
+      
+      console.log('[renderProfile] Nameplate HTML inserted, isVideo:', isVideo, 'proxiedUrl:', proxiedNpUrl);
+      
+      // Attach color extraction after element is rendered
+      if (isVideo) {
+        // For video, sample color as soon as video data is loaded
+        setTimeout(() => {
+          const videoEl = document.querySelector('#nameplateBar video');
+          console.log('[renderProfile] Found video element:', videoEl);
+          if (videoEl) {
+            extractColorFromVideo(videoEl);
+          }
+        }, 200);
+      } else {
+        setTimeout(() => {
+          const npImg = document.querySelector('#nameplateBar img.np-bg');
+          console.log('[renderProfile] Found img element:', npImg);
+          if (npImg) {
+            console.log('[renderProfile] Image complete:', npImg.complete, 'src:', npImg.src);
+            if (npImg.complete) {
+              console.log('[renderProfile] Image already loaded, extracting color now');
+              extractNameplateColor(npImg);
+            } else {
+              console.log('[renderProfile] Image not loaded yet, attaching onload handler');
+              npImg.onload = () => {
+                console.log('[renderProfile] Image onload triggered');
+                extractNameplateColor(npImg);
+              };
+              npImg.onerror = (e) => {
+                console.error('[renderProfile] Image onerror:', e);
+              };
+            }
+          }
+        }, 100);
+      }
+    } else if (p.accentColor) {
+      // No nameplate image, use accent color as full-width background
+      console.log('[renderProfile] No nameplate image, using accent color:', p.accentColor);
+      npSec.innerHTML = `
+        <div class="nameplate-bar nameplate-solid" style="background:${p.accentColor}">
           <div class="np-content">
             <div class="np-row1">
               <img class="np-avatar" src="${escHtml(p.avatarUrl)}" alt="">
@@ -291,6 +349,7 @@
           </div>
         </div>`;
     } else {
+      console.log('[renderProfile] No nameplate image and no accent color');
       npSec.innerHTML = "";
     }
 
@@ -367,9 +426,174 @@
     return h>0?`${pad(h)}:${pad(m)}:${pad(s)} elapsed`:`${pad(m)}:${pad(s)} elapsed`;
   }
 
+  // Extract dominant color from nameplate image and apply as darkened background
+  function extractNameplateColor(img) {
+    console.log('[extractNameplateColor] Starting...', img.src);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    
+    console.log('[extractNameplateColor] Canvas size:', canvas.width, 'x', canvas.height);
+    
+    if (canvas.width === 0 || canvas.height === 0) {
+      console.warn('[extractNameplateColor] Invalid image dimensions');
+      return;
+    }
+    
+    try {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    } catch (e) {
+      console.error('[extractNameplateColor] Failed to draw image:', e);
+      return;
+    }
+    
+    // Sample pixels from the center area
+    const sampleSize = 10;
+    const startX = Math.floor((canvas.width - sampleSize) / 2);
+    const startY = Math.floor((canvas.height - sampleSize) / 2);
+    
+    let r = 0, g = 0, b = 0, count = 0;
+    
+    for (let y = startY; y < startY + sampleSize && y < canvas.height; y += 2) {
+      for (let x = startX; x < startX + sampleSize && x < canvas.width; x += 2) {
+        try {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          r += pixel[0];
+          g += pixel[1];
+          b += pixel[2];
+          count++;
+        } catch (e) {
+          console.warn('[extractNameplateColor] Could not read pixel:', e);
+          return;
+        }
+      }
+    }
+    
+    if (count === 0) return;
+    
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+    
+    console.log('[extractNameplateColor] Extracted RGB:', r, g, b);
+    
+    // Darken by 70%
+    r = Math.floor(r * 0.8);
+    g = Math.floor(g * 0.8);
+    b = Math.floor(b * 0.8);
+    
+    console.log('[extractNameplateColor] Darkened RGB:', r, g, b);
+    
+    const nameplateBar = document.getElementById('nameplateBar');
+    if (nameplateBar) {
+      const bgColor = `rgb(${r}, ${g}, ${b})`;
+      nameplateBar.style.background = bgColor;
+      console.log('[extractNameplateColor] Applied background:', bgColor);
+    } else {
+      console.warn('[extractNameplateColor] nameplateBar not found');
+    }
+  }
+
+  // Extract dominant color from video frame and apply as darkened background
+  function extractColorFromVideo(video) {
+    console.log('[extractColorFromVideo] Starting...', video.src || video.querySelector('source')?.src);
+    
+    // Wait for video to be playing
+    if (video.readyState < 2) {
+      console.log('[extractColorFromVideo] Video not ready, waiting...');
+      video.onloadeddata = () => extractColorFromVideo(video);
+      return;
+    }
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width = video.videoWidth || 448;
+    canvas.height = video.videoHeight || 84;
+    
+    console.log('[extractColorFromVideo] Canvas size:', canvas.width, 'x', canvas.height);
+    
+    if (canvas.width === 0 || canvas.height === 0) {
+      console.warn('[extractColorFromVideo] Invalid video dimensions, retrying...');
+      setTimeout(() => extractColorFromVideo(video), 500);
+      return;
+    }
+    
+    try {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    } catch (e) {
+      console.error('[extractColorFromVideo] Failed to draw video frame:', e);
+      // Fallback: try to get color from the static image URL instead
+      const staticImg = document.createElement('img');
+      staticImg.crossOrigin = 'anonymous';
+      const staticUrl = video.querySelector('source')?.src?.replace('/asset.webm', '/static.png');
+      console.log('[extractColorFromVideo] Falling back to static image:', staticUrl);
+      if (staticUrl) {
+        staticImg.onload = () => extractNameplateColor(staticImg);
+        staticImg.src = staticUrl;
+      }
+      return;
+    }
+    
+    // Sample pixels from the center area
+    const sampleSize = 20;
+    const startX = Math.floor((canvas.width - sampleSize) / 2);
+    const startY = Math.floor((canvas.height - sampleSize) / 2);
+    
+    let r = 0, g = 0, b = 0, count = 0;
+    
+    for (let y = startY; y < startY + sampleSize && y < canvas.height; y += 4) {
+      for (let x = startX; x < startX + sampleSize && x < canvas.width; x += 4) {
+        try {
+          const pixel = ctx.getImageData(x, y, 1, 1).data;
+          r += pixel[0];
+          g += pixel[1];
+          b += pixel[2];
+          count++;
+        } catch (e) {
+          console.warn('[extractColorFromVideo] Could not read pixel:', e);
+          // Fallback to static image
+          const staticImg = document.createElement('img');
+          staticImg.crossOrigin = 'anonymous';
+          const staticUrl = video.querySelector('source')?.src?.replace('/asset.webm', '/static.png');
+          console.log('[extractColorFromVideo] Falling back to static image:', staticUrl);
+          if (staticUrl) {
+            staticImg.onload = () => extractNameplateColor(staticImg);
+            staticImg.src = staticUrl;
+          }
+          return;
+        }
+      }
+    }
+    
+    if (count === 0) return;
+    
+    r = Math.round(r / count);
+    g = Math.round(g / count);
+    b = Math.round(b / count);
+    
+    console.log('[extractColorFromVideo] Extracted RGB:', r, g, b);
+
+    // Darken by 30% (keep 70% of original brightness)
+    r = Math.floor(r * 0.7);
+    g = Math.floor(g * 0.7);
+    b = Math.floor(b * 0.7);
+
+    console.log('[extractColorFromVideo] Darkened RGB:', r, g, b);
+    
+    const nameplateBar = document.getElementById('nameplateBar');
+    if (nameplateBar) {
+      const bgColor = `rgb(${r}, ${g}, ${b})`;
+      nameplateBar.style.background = bgColor;
+      console.log('[extractColorFromVideo] Applied background:', bgColor);
+    } else {
+      console.warn('[extractColorFromVideo] nameplateBar not found');
+    }
+  }
+
   effectsDbReady.then(() => {
     loadProfile();
-    setInterval(loadProfile, 5 * 60_000);
+    setInterval(loadProfile, 60_000);
   });
 </script>
 </body>
