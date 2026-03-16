@@ -479,16 +479,17 @@
     console.log('[extractNameplateColor] Extracted RGB:', r, g, b);
 
     // Keep 30% brightness (70% darker)
-    r = Math.floor(r * 0.3);
-    g = Math.floor(g * 0.3);
-    b = Math.floor(b * 0.3);
+    r = Math.floor(r * 0.5);
+    g = Math.floor(g * 0.5);
+    b = Math.floor(b * 0.5);
 
     console.log('[extractNameplateColor] Darkened RGB:', r, g, b);
     
     const nameplateBar = document.getElementById('nameplateBar');
     if (nameplateBar) {
       const bgColor = `rgb(${r}, ${g}, ${b})`;
-      nameplateBar.style.background = bgColor;
+      // Gradient: transparent on left, solid color on right
+      nameplateBar.style.background = `linear-gradient(to right, transparent 0%, ${bgColor} 40%, ${bgColor} 100%)`;
       console.log('[extractNameplateColor] Applied background:', bgColor);
     } else {
       console.warn('[extractNameplateColor] nameplateBar not found');
@@ -574,16 +575,18 @@
     
     console.log('[extractColorFromVideo] Extracted RGB:', r, g, b);
 
-    r = Math.floor(r * 0.2);
-    g = Math.floor(g * 0.2);
-    b = Math.floor(b * 0.2);
+    // Keep 30% brightness (70% darker)
+    r = Math.floor(r * 0.3);
+    g = Math.floor(g * 0.3);
+    b = Math.floor(b * 0.3);
 
     console.log('[extractColorFromVideo] Darkened RGB:', r, g, b);
-    
+
     const nameplateBar = document.getElementById('nameplateBar');
     if (nameplateBar) {
       const bgColor = `rgb(${r}, ${g}, ${b})`;
-      nameplateBar.style.background = bgColor;
+      // Gradient: transparent on left, solid color on right
+      nameplateBar.style.background = `linear-gradient(to right, transparent 0%, ${bgColor} 40%, ${bgColor} 100%)`;
       console.log('[extractColorFromVideo] Applied background:', bgColor);
     } else {
       console.warn('[extractColorFromVideo] nameplateBar not found');
