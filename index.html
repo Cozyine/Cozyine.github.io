@@ -272,11 +272,11 @@
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
       // Convert accent hex to rgba for gradient
-      let npLeft = "rgba(0,0,0,.85)";
+      let npLeft = "rgba(0,0,0,.55)";
       if (p.accentColor) {
         const hex = p.accentColor.replace("#","");
         const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
-        npLeft = `rgba(${r},${g},${b},.85)`;
+        npLeft = `rgba(${r},${g},${b},.55)`;
       }
       const npClan = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
