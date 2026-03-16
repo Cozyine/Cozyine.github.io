@@ -271,7 +271,7 @@
       const bgEl = p.nameplateAnimatedUrl
         ? `<video autoplay loop muted playsinline><source src="${escHtml(p.nameplateAnimatedUrl)}" type="video/webm"></video>`
         : `<img class="np-bg" src="${escHtml(p.nameplateUrl)}" alt="">`;
-      const accentDark = p.accentColor ? p.accentColor + "bf" : "rgba(0,0,0,.75)";
+      const accentDark = "rgba(0,0,0,.75)";
       const npClan = p.clanTag
         ? `<span class="np-clan">${p.clanBadgeUrl?`<img src="${escHtml(p.clanBadgeUrl)}" alt="">`:""}${escHtml(p.clanTag)}</span>`
         : "";
